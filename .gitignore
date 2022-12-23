@@ -1,5 +1,5 @@
 # Byte-compiled / optimized / DLL files
-__pycache__/
+auctionApp/__pycache__/
 *.py[cod]
 *$py.class
 
@@ -127,3 +127,9 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+auctionApp/__pycache__/__init__.cpython-39.pyc
+auctionApp/__pycache__/settings.cpython-39.pyc
+auctionApp/__pycache__/urls.cpython-39.pyc
+auctionApp/__pycache__/wsgi.cpython-39.pyc
+db.sqlite3
+mainapp/.DS_Store
