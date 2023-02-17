@@ -7,25 +7,21 @@ from django.contrib.auth.models import AbstractUser
     
 class MyUser(AbstractUser):
     date_of_birth = models.DateField( default='1970-01-01' )
-    profile_picture = models.ImageField(upload_to='users/', default= 'defaultIcon.jpg')
-    city = models.CharField(max_length=50, )
+    recommended = models.BooleanField(default=True)
+    private = models.BooleanField(default=False)
 
     def getDOB(self):
         return self.date_of_birth
-
-    def getProfilePicture(self):
-        return self.profile_picture.url
-
-    def getInterest(self):
-        return self.interest
-
     
     def to_dict(self):
         return {
+            'id' : self.id,
             'username': self.username,
             'password' : self.password,
             'email' : self.email,
             'dateOfBirth' : self.date_of_birth,
+            'recommend' : self.recommended,
+            'private' : self.private
         }
     
     def profile_info(self):
@@ -33,8 +29,24 @@ class MyUser(AbstractUser):
             'username': self.username,
             'email' : self.email,
             'date_of_birth' : self.date_of_birth,
-            'city' : self.city,
-            'image' : self.profile_picture.url,
+        }
+    
+    def foreign_dict(self):
+        if not self.private:
+            return {
+                "name" : self.username,
+                "email" : self.email,
+                "dateofbirth" : self.date_of_birth
+            }
+
+class Friends(models.Model):
+    user = models.ForeignKey(MyUser, on_delete=models.CASCADE, primary_key=True, related_name="User")
+    friend = models.ForeignKey(MyUser, on_delete=models.CASCADE, related_name="Friend")
+
+    def to_dict(self):
+        return {
+            'user' : self.user.to_dict(),
+            'friend' : self.friend.to_dict()
         }
 
 class UserGenres(models.Model):
@@ -50,32 +62,33 @@ class UserGenres(models.Model):
         }
 
 class Messages (models.Model):
-    user_id = models.IntegerField()
+    user = models.ForeignKey(MyUser, on_delete=models.CASCADE, blank=True, null=True)
     message = models.CharField(max_length=500)
     type = models.CharField(max_length=24)
 
     def GetMessage(self):
         return {
-            'UserID' : self.user_id,
+            'UserID' : self.user.to_dict(),
             'Message' : self.message
         }
 
 class Forum (models.Model):
+    creator = models.ForeignKey(MyUser, on_delete=models.CASCADE, blank=True, null=True)
     name = models.CharField(max_length=24, unique=True)
 
     def NumberOfUniqueUsers(self):
         length = []
-        for i in ForumMessages.objects.filter( forum_id = self):
-            length.append( i.message_id.user_id )
+        for i in ForumMessages.objects.filter( forum = self):
+            length.append( i.message.user )
         return len(list(set(length)))
 
     def NumberOfMessages(self):
         length = 0
         for i in ForumMessages.objects.all():
 
-            if (i.forum_id == self):
+            if (i.forum == self):
                 print("hello")
-            if i.forum_id.id == self.id:
+            if i.forum.id == self.id:
                 length += 1
         return length
 
@@ -87,52 +100,100 @@ class Forum (models.Model):
             "NumberOfUsers" : self.NumberOfUniqueUsers(),
         }
 
+
+
+class ForumTab (models.Model):
+    forum = models.ForeignKey(Forum, on_delete=models.CASCADE)
+    name = models.CharField(max_length=54)
+
+    def to_dict(self):
+        return {
+            'id' : self.id,
+            'forum' : self.forum.to_dict(),
+            'name' : self.name
+        }
+
 class Book (models.Model):
-    id = models.IntegerField(max_length=13 , primary_key=True)
+    id = models.CharField(max_length=13 , primary_key=True)
     name = models.CharField(max_length=24)
+    pages = models.IntegerField(default=0)
 
     def GetISBN(self):
         return self.id
+
+    def to_dict(self):
+        return {
+            'id' : self.id,
+            'name' : self.name
+        } 
+
+class BookTracker (models.Model):
+    class Meta:
+        unique_together = (('book', 'user'),)
+
+    book = models.ForeignKey(Book, on_delete=models.CASCADE)
+    user = models.ForeignKey(MyUser, on_delete=models.CASCADE)
+    completed = models.BooleanField()
+    read = models.IntegerField()
+
+    def to_dict(self):
+        return {
+            'id' : self.id,
+            'book' : self.book.to_dict(),
+            'user' : self.user.to_dict(),
+            'completed' : self.completed,
+            'read' : self.read
+        }
 
 class Author (models.Model):
     name = models.CharField(max_length=24)
     
 class ForumMessages(models.Model):
-    message_id = models.ForeignKey(Messages, on_delete=models.CASCADE)
-    forum_id = models.ForeignKey(Forum, on_delete=models.CASCADE)        
+    message = models.ForeignKey(Messages, on_delete=models.CASCADE)
+    forum = models.ForeignKey(Forum, on_delete=models.CASCADE)   
+    tab = models.ForeignKey(ForumTab, on_delete=models.CASCADE, blank=True, null=True)     
 
     def to_dict(self):
         return {
-            'message' : self.message_id,
-            'forum_id' : self.forum_id
+            'message' : self.message.GetMessage(),
+            'forum' : self.forum.to_dict(),
+            'tab' : self.tab.to_dict()
         }
 
 class BookMessages(models.Model):
-    message_id = models.ForeignKey(Messages, on_delete=models.CASCADE)
-    book_id = models.ForeignKey(Book, on_delete=models.CASCADE)
+    message = models.ForeignKey(Messages, on_delete=models.CASCADE)
+    book = models.ForeignKey(Book, on_delete=models.CASCADE)
 
     def to_dict(self):
         return {
-            'message' : self.message_id,
-            'book_id' : self.book_id
+            'message' : self.message,
+            'book' : self.book
         }
 
 class AuthorMessages(models.Model):
-    message_id = models.ForeignKey(Messages, on_delete=models.CASCADE)
-    author_id = models.ForeignKey(Author, on_delete=models.CASCADE)
+    message = models.ForeignKey(Messages, on_delete=models.CASCADE)
+    author = models.ForeignKey(Author, on_delete=models.CASCADE)
 
     def to_dict(self):
         return {
-            'message' : self.message_id,
-            'author_id' : self.author_id
+            'message' : self.message,
+            'author' : self.author
         }
 
 
 class BookReviews(models.Model):
     user = models.ForeignKey(MyUser, on_delete=models.CASCADE)
     book = models.ForeignKey(Book, on_delete=models.CASCADE)
-    rating = models.IntegerField(max_length=1)
+    rating = models.IntegerField()
     review = models.CharField(max_length=450)  
 
     def GetBook(self):
         return self.book 
+
+    def to_dict(self):
+        return {
+            'user' : self.user.profile_info(),
+            'book' : self.book.to_dict(),
+            'rating' : self.rating,
+            'review' : self.review
+        }

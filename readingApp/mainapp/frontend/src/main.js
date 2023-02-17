@@ -5,6 +5,7 @@ import "bootstrap"
 
 import App from './App.vue'
 import Profile from './components/Profile.vue'
+import OtherUser from './components/OtherUser.vue'
 import Recommendation from './components/Recommendation.vue'
 import Search from './components/Search.vue'
 import Book from './components/Book.vue'
@@ -35,12 +36,14 @@ const router = createRouter({
     history: createWebHistory(),
     routes: [
         {path: '/Profile', name: 'Profile', component: Profile},
+        {path: '/OtherUser', name: 'User Page', component: OtherUser},
         {path: '/Recommendation', name: 'Recommendation', component: Recommendation, props: {cookie:csrfToken}},
         {path: '/Book', name: 'Item', component: Book},
         {path: '/Search', name: 'Search', component: Search},
         {path: '/Forums', name: 'Forums', component: Forums},
         {path: '/ForumPage', name: 'Forum Page', component: ForumPage},
         {path: '/Author', name: 'Author Page', component: Author},
+        
     ]
 })
 

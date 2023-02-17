@@ -29,7 +29,7 @@ class SignUpForm(UserCreationForm):
     class Meta:
         model = MyUser
 
-        fields = [ 'username' , 'first_name' , 'last_name' ,  'email' , 'city' , 'date_of_birth', 'password1' , 'password2']
+        fields = [ 'username' , 'first_name' , 'last_name' ,  'email' , 'date_of_birth' , 'password1' , 'password2']
 
 
         help_texts = {
@@ -45,11 +45,9 @@ class SignUpForm(UserCreationForm):
 
             "last_name": forms.TextInput(attrs= {"class" : "form-control"}),
 
+            "date_of_birth" : forms.DateTimeInput(attrs= {"class" : "form-control"}),
+
             "email": forms.TextInput(attrs= {"class" : "form-control"}),
-
-            "city": forms.TextInput(attrs= {"class" : "form-control"}),
-
-            "date_of_birth": forms.DateInput(attrs= {'type': 'date', "class" : "form-control"}),
 
             "password1": forms.TextInput(attrs= {"class" : "form-control"}),
 

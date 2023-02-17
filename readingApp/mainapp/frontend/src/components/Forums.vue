@@ -26,17 +26,18 @@ export default defineComponent( {
         let data = await fetch("http://localhost:8000/GetForums", {method: "GET", credentials: "include", mode: "cors", referrerPolicy: "no-referrer" })
         let response = await data.json()
         this.AllForums = response['Forums']
-        console.log(response);
        },
        async CreateForum() {
         let data = await fetch("http://localhost:8000/CreateForum", 
         {   method: 'POST',
             headers : {'Content-Type':'application/json'},
             body: JSON.stringify({
+                user : this.user_id,
                 Name : this.Name
             })
         })
         let reponse = await data.json()
+        this.GetForums()
        },
         store_item (item) {
             localStorage.setItem('forum', item)
@@ -48,36 +49,42 @@ export default defineComponent( {
 
 <template>
 
-    <form @submit.prevent="GetForums"><button>Click me</button></form>
 
-    <form @submit.prevent="CreateForum"><input type="text" v-model="Name"><button>Click This</button></form>
+    <form class="row" style="padding-top: 3rem; padding-left: 3rem; padding-right: 3rem;" @submit.prevent="CreateForum">
 
-    <div v-for="forum in AllForums">
+        <div class="col-md-2"><input class="form-control" type="text" v-model="Name" placeholder="Create new forum"></div>
+        
+        <button class="col-md-1 btn btn-primary">Add new forum</button>
 
-        <td class="row p-5"> 
+    </form>
+    
+    <hr style="padding-bottom: 0.5rem; padding-top: 1rem;">
 
-            <router-link @click="store_item(forum['id'])" class="nav-link col-3 p-5 " :to="{path: '/ForumPage'}"> 
+    <div class="row">
 
-                <div class="row">
-                    <div class=" col-4 font-weight-bold" style="size: 1000rem;">
+        <div class="col-md-4 p-5" v-for="forum in AllForums">
+                
+            <router-link @click="store_item(forum['id'])" class="nav-link" :to="{path: '/ForumPage'}"> 
+
+                <div class="row p-5 border border-primary">
+
+                    <div class=" col-3 font-weight-bold" style="font-weight: bolder;">
                         {{ forum['Name'] }}
                     </div>  
 
-                    <div class="col-4">
-                        NumberOfMessages : {{ forum['NumberOfMessages'] }}
+                    <div class="col-5">
+                        Number Of Messages : {{ forum['NumberOfMessages'] }}
                     </div>
 
                     <div class="col-4">
-                        NumberOfUsers : {{ forum['NumberOfUsers'] }}
+                        Number Of Users : {{ forum['NumberOfUsers'] }}
                     </div>
 
                 </div>
 
-
-
             </router-link>  
 
-        </td>
+        </div>
 
     </div>
 

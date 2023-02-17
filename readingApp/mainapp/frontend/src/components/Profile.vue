@@ -8,15 +8,21 @@ export default defineComponent( {
     },
     data() {
         return {
+            user : {},
             user_id: "",
-            user: [{username: "", email: "", date_of_birth: "", city: "", image: ""}],
             username: "",
+            password: "",
+            old_password : "",
             email: "",
             date_of_birth: "",
-            city: "",
-            edits: [{username: "", email: "", date_of_birth: "", city:""}],
             included: false,
-            pic: "",
+            recommendation: true,
+            private : "",
+
+            friends: [],
+
+            KaggleBooks : [],
+            BookStats : [],
         }
         
     },
@@ -24,33 +30,61 @@ export default defineComponent( {
         async get_username() {
             let response = await fetch("http://localhost:8000/ses-user", {method: "GET", credentials: "include", mode: "cors", referrerPolicy: "no-referrer" })
             let data = await response.json()
-            console.log(data);
             this.user_id = data.user_id
+
+            this.fetch_userbooks()
+            
+        },
+        async fetch_userbooks() {
+            let data = await fetch( ("http://localhost:8000/SearchUser/" + this.user_id))
+            let response = await data.json()
+            
+            this.KaggleBooks = response['KaggleBooks']
+            this.BookStats = response['UserBooks']
+
+            
+            for (let i=0; this.KaggleBooks.length; i++) {
+                console.log(this.KaggleBooks[i]);
+                this.KaggleBooks[i] = JSON.parse(this.KaggleBooks[i])
+                for (let key in this.KaggleBooks[i]) {
+                    this.KaggleBooks[i][key] = this.KaggleBooks[i][key][Object.keys(this.KaggleBooks[i][key])[0]]
+                }
+            }
+            console.log(this.KaggleBooks);
+            this.GetFriend()
         },
         async fetch_profile() {
             let response = await fetch("http://localhost:8000/user-profile", {method: "GET", credentials: "include", mode: "cors", referrerPolicy: "no-referrer"  })
             let data = await response.json()
-            this.user = data.myUser
-            console.log(this.user[0].image);
-            
+            this.user = data.myUser[0]
+            this.recommendation = this.user['recommend']
+            this.private = this.user['private']
             // this.pic = data.profile_image
             // console.log(this.pic);
             
         },
-        async edit_profile(user_id, username, email, city , date_of_birth) {
+        async GetFriend() {
+            let response = await fetch(("http://localhost:8000/GetFriend" + this.user_id), {method: "GET", credentials: "include", mode: "cors", referrerPolicy: "no-referrer"  })
+            let data = await response.json()
+            this.friends = data['friend']
+
+            // this.pic = data.profile_image
+            // console.log(this.pic);
+            
+        },
+        async edit_profile(user_id, data_change, data_field) {
             let response = await fetch("http://localhost:8000/user-profile", {
                 method: 'PUT',
                 body: JSON.stringify({
                     user_id: user_id,
-                    username: username,
-                    email: email,
-                    city: city,
-                    date_of_birth: date_of_birth,
+                    old_pass : this.old_password,
+                    change : data_change,
+                    field : data_field,
                 })
             })
+            this.old_password = ""
             let data = await response.json()
             this.included = data.included
-            console.log(this.included)
             if (this.included == true){
                 alert("Username already exists")
             } else {
@@ -70,94 +104,187 @@ export default defineComponent( {
                 <hr class="my-4">
             </div>
         </div>
-        <div class="row justify-content-between g-3">
-            <div class="col-auto">
-                <img :src="'http://localhost:8000' + user[0].image" class="img-thumbnail w-25 ">
+        
+            <div class="row ">
+                <div class="col-md-4" >
+                    <p class="display-6"> Username: {{ user['username'] }} </p>
+                </div>
+                <div class="col-md-8 d-flex justify-content-end" style="margin-top: 1rem;">
+                    <form class="row" style="margin-right: 3rem;" @submit.prevent="edit_profile(user_id, username, 'username')" >
+                        <div class="col-md-11">
+                            <input class="form-control" type="text" v-model="username">
+                        </div>
+                        <div class="col-md-1">
+                            <button class="btn btn-secondary">Edit</button>
+                        </div>
+                    </form>
+                </div>                
             </div>
-            <div class="col-auto">
-                <form :action="'http://localhost:8000/submit-user-image/' + user_id" method="POST" enctype="multipart/form-data">
-                    <label for="formFile">Update Profile Picture</label>
-                    <div class="mb-3">
-                        <input class="form-control " type="file" id="formFile">
-                    </div>
-                <input type="submit" class="btn btn-secondary" value="Update Picture">
-            </form>
+
+            <div class="row ">
+                <div class="col-md-4" >
+                    <p class="display-6">Password: *****</p>
+                </div>
+                <div class="col-md-8 d-flex justify-content-end" style="margin-top: 1rem; margin-right: 0; padding-right: 0;">
+                    <form class="row" style="margin-right: 0; padding-right: 0;" @submit.prevent="edit_profile(user_id, password, 'password')" >                        
+                        <div class="col-md-5">
+                            <input class="form-control" type="text" v-model="old_password">
+                        </div>
+                        <div class="col-md-5">
+                            <input class="form-control" type="text" v-model="password">
+                        </div>
+                        <div class="col-md-1" style="padding-right: 0;">
+                            <button class="btn btn-secondary">Edit</button>
+                        </div>
+                    </form>
+                </div>                
             </div>
-        </div>
-        <div v-for="info in user">
-            <div v-for="edit in edits">
-                <form @submit.prevent="edit_profile(user_id, edit.username, info.email, info.city, info.date_of_birth)">
-                    <div class="row justify-content-between g-3">
-                        <div class="col-auto">
-                            <p>Username: {{ info.username }}</p>
+
+            <div class="row ">
+                <div class="col-md-4" >
+                    <p class="display-6">E-Mail: {{ user['email'] }}</p>
+                </div>
+                <div class="col-md-8 d-flex justify-content-end" style="margin-top: 1rem;">
+                    <form class="row" style="margin-right: 3rem;" @submit.prevent="edit_profile(user_id, email, 'email')" >
+                        <div class="col-md-11">
+                            <input class="form-control" type="email" v-model="email">
                         </div>
-                        <div class="col-auto">
-                            <div class="row align-items-center g-3">
-                                <div class="col-auto">
-                                    <input class="form-control" type="text" v-model="edit.username">
-                                </div>
-                                <div class="col-auto">
-                                    <button class="btn btn-secondary">Edit</button>
+                        <div class="col-md-1">
+                            <button class="btn btn-secondary">Edit</button>
+                        </div>
+                    </form>
+                </div>                
+            </div>
+
+            <div class="row ">
+                <div class="col-md-4" >
+                    <p class="display-6">Recommendation: </p>
+                </div>
+                <div class="col-md-8 d-flex justify-content-end" style="margin-top: 1rem;">
+                    <div class="form-check form-switch" style="margin-right: 1rem;">
+                        <input class="form-check-input" style="width: 3rem; height: 2rem;" v-model="recommendation" type="checkbox" 
+                        @click="edit_profile(user_id, recommendation, 'recommendation')">
+                    </div>
+                    
+                </div>                
+            </div>
+
+            <div class="row ">
+                <div class="col-md-4" >
+                    <p class="display-6">Private: </p>
+                </div>
+                <div class="col-md-8 d-flex justify-content-end">
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" style="width: 3rem; height: 2rem; margin-right: 1rem;" v-model="private" type="checkbox"
+                        @click="edit_profile(user_id, recommendation, 'private')">
+                    </div>
+                    
+                </div>                
+            </div>
+
+            <div class="row ">
+                <div class="col-md-4" >
+                    <p class="display-6">Date Of Birth: {{ user['dateOfBirth'] }}</p>
+                </div>
+                <div class="col-md-8 d-flex justify-content-end" style="margin-top: 1rem;">
+                    <form class="row" style="margin-right: 1.8rem" @submit.prevent="edit_profile(user_id, date_of_birth, 'date_of_birth')" >
+                        <div class="col-md-10">
+                            <input class="form-control" type="date" v-model="date_of_birth">
+                        </div>
+                        <div class="col-md-1">
+                            <button class="btn btn-secondary">Edit</button>
+                        </div>
+                    </form>
+                </div>                
+            </div>
+
+
+
+            <div>
+                <table class="table table-hover">
+
+                    <tr class="row mt-1">
+
+                        <th class="align-middle col-sm-2 p-2">Book Name</th>
+                        <th class="align-middle col-sm-2 p-2">Book Image</th>
+                        <th class="align-middle col-sm-2 p-2">Authors</th>
+                        <th class="align-middle col-sm-2 p-2">Catagories</th>
+                        <th class="align-middle col-sm-2 p-2">Pages</th>
+                        <th class="align-middle col-sm-2 p-2">Publish Information</th>
+                        
+                    </tr>
+                    
+
+                    <tr class="mt-2 row" v-for="items in KaggleBooks" v-if="KaggleBooks">
+
+                        <!-- {{ items }} -->
+
+                        <td class="col-sm-2 p-2">
+                            <router-link @click="store_item(items['isbn'])" class="nav-link p-0" :to="{path: '/Book'}">
+                                 {{items['title']}} 
+                            </router-link> 
+                         </td>
+
+                        <td class="col-sm-2 p-2"> 
+                            <img :src="items['img']" class="img-fluid p-0">
+                        </td>
+
+                        <td class="align-middle col-sm-2 p-2" > 
+                            <div v-if="items ['author']" class="p-0">
+                                    {{ items['author'] }}
+                            </div>
+                            <div class="p-0" v-else>
+                                No Known Authors
+                            </div>
+                        </td>
+
+                        <td class="align-middle col-sm-2 p-2">
+                            <div v-if="items['genre']" class="p-0 " style="word-wrap: break-word;">
+                                {{items['genre']}}
+                            </div>
+                            <div class="p-0" v-else> Book has not be catagorised </div>
+                        </td>
+
+                        <td class="align-middle col-sm-2 p-2">
+                            <div v-if="items['pages']" class="p-0">
+                                <div  class="p-0">
+                                    {{ BookStats[items['isbn']]['read'] }} / {{  items['pages'] }} Pages
+                                    <caption v-if="BookStats[items['isbn']]['completed']">Completed</caption>
+                                    <caption v-else>In Progress</caption>
                                 </div>
                             </div>
-                        </div>
-                    </div>
-                </form>
-                
-                <form @submit.prevent="edit_profile(user_id, info.username, edit.email, info.city, info.date_of_birth)">
-                    <div class="row justify-content-between g-3">
-                        <div class="col-auto">
-                            <p>Email: {{ info.email }}</p>
-                        </div>
-                        <div class="col-auto">
-                            <div class="row align-items-center g-3">
-                                <div class="col-auto">
-                                    <input class="form-control" type="email" v-model="edit.email">
-                                </div>
-                                <div class="col-auto">
-                                    <button class="btn btn-secondary">Edit</button>
+                            <div class="p-0" v-else> No page count </div>
+                        </td>
+
+                        <td class="align-middle col-sm-2 p-2">
+                            <div v-if="items['rating']" class="p-0">
+                                <div  class="p-0">
+                                    Rating : {{  items['rating'] }}
                                 </div>
                             </div>
-                        </div>
-                    </div>
-                </form>
-                <form @submit.prevent="edit_profile(user_id, info.username, info.email, edit.city, info.date_of_birth)">
-                    <div class="row justify-content-between g-3">
-                        <div class="col-auto">
-                            <p>City: {{ info.city }}</p>
-                        </div>
-                        <div class="col-auto">
-                            <div class="row align-items-center g-3">
-                                <div class="col-auto">
-                                    <input class="form-control" type="text" v-model="edit.city">
-                                </div>
-                                <div class="col-auto">
-                                    <button class="btn btn-secondary">Edit</button>
+                            <div class="p-0" v-else> No Known Publisher </div>
+
+                            <div v-if="items['totalratings']" class="p-0">
+                                <div  class="p-0">
+                                    Number of Rating : {{  items['totalratings'] }}
                                 </div>
                             </div>
-                        </div>
-                    </div>
-                </form>
-                <form @submit.prevent="edit_profile(user_id, info.username, info.email, info.city, edit.date_of_birth)">
-                    <div class="row justify-content-between g-3">
-                        <div class="col-auto">
-                            <p>Date of birth: {{ info.date_of_birth }}</p>
-                        </div>
-                        <div class="col-auto">
-                            <div class="row align-items-center g-3">
-                                <div class="col-auto">
-                                    <input class="form-control" type="date" v-model="edit.date_of_birth">
-                                </div>
-                                <div class="col-auto">
-                                    <button class="btn btn-secondary">Edit</button>
+
+                            <div v-if="items['reviews']" class="p-0">
+                                <div  class="p-0">
+                                    Number of Reviews : {{  items['reviews'] }}
                                 </div>
                             </div>
-                        </div>
-                    </div>
-                </form>  
-            </div>           
-        </div>
-    </div>
+                            <div class="p-0" v-else> No Known Publish Data </div>
+                        </td> 
+                    </tr>
+
+                </table>
+            </div>
+            
+
+    </div>           
+
 </template>
 
 

@@ -1,6 +1,6 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
-from .models import MyUser, Forum, Book, Author, AuthorMessages, BookMessages, ForumMessages, Messages, UserGenres, BookReviews
+from .models import MyUser, Forum, Book, Author, AuthorMessages, BookMessages, ForumMessages, Messages, UserGenres, BookReviews, BookTracker, ForumTab
 
 admin.site.register(MyUser, UserAdmin)
 # Register your models here.
@@ -22,3 +22,7 @@ admin.site.register(AuthorMessages)
 admin.site.register(Messages)
 
 admin.site.register(BookReviews)
+
+admin.site.register(BookTracker)
+
+admin.site.register(ForumTab)
