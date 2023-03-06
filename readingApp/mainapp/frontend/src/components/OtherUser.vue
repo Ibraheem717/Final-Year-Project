@@ -1,11 +1,14 @@
 <script>
 import { defineComponent } from 'vue'
+import { CSRFToken } from './Cookie.js'
 
 export default defineComponent( {
     created() {
         this.get_item()
         this.GetMyUser()
         this.fetch_foreign_user()
+        this.CheckFriends()
+        this.GetFriend()
     },
     data() {
         return {
@@ -17,6 +20,9 @@ export default defineComponent( {
             old_password : "",
             email: "",
             date_of_birth: "",
+
+            friends : [],
+
             included: false,
             recommendation: true,
             private : "",
@@ -32,6 +38,45 @@ export default defineComponent( {
             let data = await response.json()
             console.log(data);
             this.my_user_id = data.user_id
+            
+        },
+        async GetFriend() {
+            console.log("called");
+            let response = await fetch(("http://localhost:8000/GetFriends/" + this.user_id), {method: "GET", credentials: "include", mode: "cors", referrerPolicy: "no-referrer"  })
+            let data = await response.json()
+            this.friends = data['friend']
+
+            // this.pic = data.profile_image
+            // console.log(this.pic);
+            
+        },
+        async CheckFriends() {
+            let data = await fetch(("http://localhost:8000/CheckFriends/" + this.my_user_id +"/"+ this.user_id), {method: "GET", credentials: "include", mode: "cors", referrerPolicy: "no-referrer"  ,
+            })
+            let response = await data.json()
+
+            this.included = response['followed']
+
+            // this.pic = data.profile_image
+            // console.log(this.pic);
+            
+        },
+        async AddFriend() {
+            let response = await fetch(("http://localhost:8000/AddFriends"), {method: "POST", credentials: "include", mode: "cors", referrerPolicy: "no-referrer"  ,
+            headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json',
+            'X-CSRFToken': CSRFToken
+            },
+            body: JSON.stringify({
+                user : this.my_user_id,
+                friend : this.user_id
+                })
+            })
+            let data = await response.json()
+
+            // this.pic = data.profile_image
+            // console.log(this.pic);
             
         },
         get_item() {
@@ -60,6 +105,7 @@ export default defineComponent( {
             let data = await fetch(("http://localhost:8000/GetForeignUser/" + this.user_id), {method: "GET", credentials: "include", mode: "cors", referrerPolicy: "no-referrer"  })
             let response = await data.json()
             console.log(response);
+            this.private = response['private']
             if (response['private'] == false) {
                 this.user = response['user']
                 if (response['recommend']) {
@@ -76,31 +122,66 @@ export default defineComponent( {
     <div class="p-5 text-left bg-light" style="height:100%">
 
 
-        <div class="text-left bg-light">
+        <div class="text-left bg-light row">
+
             <div class="jumbotron">
                 <h1 class="display-4">Profile</h1>
-                <hr class="my-4">
+                
             </div>
+
+            <div v-if="included">
+                <form class="row"  @submit.prevent="AddFriend()" >
+                    <button>Add Friend</button>
+                </form>
+            </div>
+
+            <div v-else>
+                Already Following
+            </div>
+
+            <hr class="my-4">
+
         </div>
 
-        <div v-if="user.length">
 
-            <div class="row ">
-                <div class="col-md-4" >
-                    <p class="display-6"> Username: {{ user['name'] }} </p>
-                </div>             
-            </div>
-    
-            <div class="row ">
-                <div class="col-md-4" >
-                    <p class="display-6">E-Mail: {{ user['email'] }}</p>
-                </div>          
-            </div>
-    
-            <div class="row ">
-                <div class="col-md-4" >
-                    <p class="display-6">Date Of Birth: {{ user['dateofbirth'] }}</p>
-                </div>    
+        <div v-if="private == false">
+
+            <div class="row">
+
+                <div class="col-md-10">
+
+                    <div class="row ">
+                        <div class="col-md-4" >
+                            <p class="display-6"> Username: {{ user['name'] }} </p>
+                        </div>             
+                    </div>
+            
+                    <div class="row ">
+                        <div class="col-md-4" >
+                            <p class="display-6">E-Mail: {{ user['email'] }}</p>
+                        </div>          
+                    </div>
+            
+                    <div class="row ">
+                        <div class="col-md-4" >
+                            <p class="display-6">Date Of Birth: {{ user['dateofbirth'] }}</p>
+                        </div>    
+                    </div>
+
+                </div>
+
+                <div class="col-md-2 ">
+                
+                    <h4 class="text-center"> <u> Friends </u> </h4>
+
+                    <div v-for="friend in friends" class="row p-2">
+                        
+                        <router-link @click="store_item(friend['friend']['username'])" class="nav-link text-center" :to="{path: '/OtherUser'}"> <b>{{ friend['friend']['username'] }}</b> </router-link> 
+
+                    </div>
+
+                </div>
+
             </div>
     
     
@@ -187,12 +268,16 @@ export default defineComponent( {
                 </table>
             </div>
 
+
+            
+        
             <div v-else>
 
                 <hr>
                 <h1> No books Recorded </h1>
 
             </div>
+
 
         </div>
 

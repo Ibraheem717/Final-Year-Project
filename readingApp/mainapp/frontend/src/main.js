@@ -13,6 +13,7 @@ import Forums from './components/Forums.vue'
 import ForumPage from './components/ForumPage.vue'
 import Author from './components/Author.vue'
 
+
 let hostname = "http://localhost:8000/"
 
 function getCookie(name) {

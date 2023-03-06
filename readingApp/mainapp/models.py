@@ -40,7 +40,7 @@ class MyUser(AbstractUser):
             }
 
 class Friends(models.Model):
-    user = models.ForeignKey(MyUser, on_delete=models.CASCADE, primary_key=True, related_name="User")
+    user = models.ForeignKey(MyUser, on_delete=models.CASCADE, related_name="User")
     friend = models.ForeignKey(MyUser, on_delete=models.CASCADE, related_name="Friend")
 
     def to_dict(self):
@@ -145,8 +145,36 @@ class BookTracker (models.Model):
             'read' : self.read
         }
 
+class BookTab (models.Model):
+    book = models.ForeignKey(Book, on_delete=models.CASCADE)
+    name = models.CharField(max_length=54)
+
+    def to_dict(self):
+        return {
+            'id' : self.id,
+            'forum' : self.book.to_dict(),
+            'name' : self.name
+        }
+
 class Author (models.Model):
     name = models.CharField(max_length=24)
+
+    def to_dict(self):
+        return {
+            'id' : self.id,
+            'name' : self.name
+        }
+
+class AuthorTab (models.Model):
+    author = models.ForeignKey(Author, on_delete=models.CASCADE)
+    name = models.CharField(max_length=54)
+
+    def to_dict(self):
+        return {
+            'id' : self.id,
+            'forum' : self.author.to_dict(),
+            'name' : self.name
+        }
     
 class ForumMessages(models.Model):
     message = models.ForeignKey(Messages, on_delete=models.CASCADE)
@@ -163,6 +191,7 @@ class ForumMessages(models.Model):
 class BookMessages(models.Model):
     message = models.ForeignKey(Messages, on_delete=models.CASCADE)
     book = models.ForeignKey(Book, on_delete=models.CASCADE)
+    tab = models.ForeignKey(BookTab, on_delete=models.CASCADE, blank=True, null=True)
 
     def to_dict(self):
         return {
@@ -173,6 +202,7 @@ class BookMessages(models.Model):
 class AuthorMessages(models.Model):
     message = models.ForeignKey(Messages, on_delete=models.CASCADE)
     author = models.ForeignKey(Author, on_delete=models.CASCADE)
+    tab = models.ForeignKey(AuthorTab, on_delete=models.CASCADE, blank=True, null=True)
 
     def to_dict(self):
         return {

@@ -2,6 +2,8 @@
 import { objectToString } from '@vue/shared'
 import { defineComponent } from 'vue'
 import { useRoute } from 'vue-router'
+import {CSRFToken} from './Cookie.js'
+
 
 export default defineComponent( {
     created() {
@@ -44,7 +46,7 @@ export default defineComponent( {
             localStorage.setItem('user', item)
         },
         async fetch_tabs() {
-            let data = await fetch(("http://localhost:8000/GetTabs/" + this.Forum) , {
+            let data = await fetch(("http://localhost:8000/GetAllTabs/Forum/" + this.Forum) , {
                 method: 'GET',
                 credentials: "include",
                 mode: "cors",
@@ -61,7 +63,7 @@ export default defineComponent( {
             this.fetch_user()
         },
         async fetch_user() {
-            let data = await fetch(("http://localhost:8000/GetTabUsers/" + this.tab_id) , {
+            let data = await fetch(("http://localhost:8000/GetTabUsers/forum/" + this.tab_id) , {
                 method: 'GET',
             })
             let response = await data.json()
@@ -72,7 +74,7 @@ export default defineComponent( {
             this.tab_users = response
         },
         async fetch_Messages() {
-            let data = await fetch(("http://localhost:8000/GetForumTab/" + this.Forum + "/" + this.current_tab) , {
+            let data = await fetch(("http://localhost:8000/GetTab/" + this.Forum + "/" + this.current_tab) , {
                 method: 'GET',
                 credentials: "include",
                 mode: "cors",
@@ -102,6 +104,11 @@ export default defineComponent( {
             credentials: "include",
             mode: "cors",
             referrerPolicy: "no-referrer",
+            headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json',
+            'X-CSRFToken': CSRFToken
+            },
             body: JSON.stringify({
                 ForumID: this.Forum,
                 msg: this.msg,
@@ -118,12 +125,18 @@ export default defineComponent( {
         async create_tab() {
             if (this.current_tab!="") 
             {
-                let data = await fetch(("http://localhost:8000/CreateForumTab"), {
+                let data = await fetch(("http://localhost:8000/CreateTab"), {
                 method: 'POST',
                 credentials: "include",
                 mode: "cors",
                 referrerPolicy: "no-referrer",
+                headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json',
+                'X-CSRFToken': CSRFToken
+                },
                 body: JSON.stringify({
+                    medium : 'forum',
                     forum: this.Forum,
                     name: this.new_tab,
                 })
@@ -142,77 +155,87 @@ export default defineComponent( {
 </script>
 
 <template>
-    <div class="p-5 text-left bg-light container" style="height: 100%;">
+    <div class="pt-3" style="height: 100rem;" >
 
-            <div class="collapse" id="navbarToggleExternalContent">
-            <div class="bg-dark p-4">
-                <h5 class="text-white h4">Collapsed content</h5>
-                <span class="text-muted">Toggleable via the navbar brand.</span>
-            </div>
-            </div>
-            <nav class="navbar navbar-dark bg-dark">
-            <div class="container-fluid">
-                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarToggleExternalContent" 
-                    aria-controls="navbarToggleExternalContent" aria-expanded="false" aria-label="Toggle navigation">
-                <span class="navbar-toggler-icon"></span>
-                </button>
-            </div>
-            </nav>
+        <div class="row h-100">
 
-            <div class="row">
+            <div class="col-md-2">
 
-                <form class="col-sm-4 row" @submit.prevent="create_tab">
+                <form class="row m-1 mt-3" @submit.prevent="create_tab">
 
-                    <div class="col-sm-9"><input class="form-control" type="text" v-model="new_tab" placeholder="Search" ></div>
+                    <div class="col-sm-9"><input class="form-control" type="text" v-model="new_tab" placeholder="Create Tab" ></div>
 
-                    <button class="btn btn-primary col-sm-2">Enter</button>
+                    <button class="btn btn-primary col-md-3">Create</button>
 
                 </form>
 
-            </div>
-
-            <section>
-                <div v-for="tab in all_tabs">
-                    <b @click="change_tab(tab)">{{ tab }}</b>
-                </div>
-            </section>
+                <hr>
                 
-
-            <div class="p-1 row border border-dark rounded" style="overflow: auto; overflow-x: hidden ; width: 100%;" >
-
-                <div class="" v-for="messages in all_messages">
-
-                    <div style="border-style: none; text-decoration: underline; font;" v-if="messages['UserID']['id'] != -1" class="row">
-                        <b>{{ messages["UserID"]['username'] }}</b> 
+                <section style="overflow: auto; overflow-x: hidden ; ">
+                    <div v-for="tab in all_tabs" class="text-center p-2 m-2 border border-dark" style="cursor: pointer;" >
+                        <i v-if="tab == current_tab" class="text-secondary" >{{ tab }}</i>
+                        <b v-else @click="change_tab(tab)" >{{ tab }}</b>
                     </div>
-
-                    <div class="row p-0" style="font-weight: normal; margin-left: 0.1rem; margin-bottom: 0.1rem;"> 
-                        <span class="border rounded m-0" style="width: auto;">{{ messages["Message"] }}</span>                                
-                    </div>
-
-                </div>
+                </section>
                 
             </div>
     
 
-                <div>
+            <div class="col-md-8 h-90">   
 
-                <form class="row m-1" @submit.prevent="post_message">
+                <div class="border border-dark rounded h-100 p-3">
+
+                    <div class="p-1 row " style="overflow: auto; overflow-x: hidden ; " >
         
-                    <div class="col-md-11"><input class="form-control" type="text" v-model="msg"></div>
-                    
-                    <button class="col-md-1 btn btn-success" style="height: 10%; background-color: green;">Post</button>
+                        <div class="container" v-for="messages in all_messages">
         
-                </form>
+                            <div style="border-style: none; text-decoration: underline; font;" v-if="messages['UserID']['id'] != -1" class="row">
+                                <b class="mt-3">{{ messages["UserID"]['username'] }}</b> 
+                            </div>
+        
+                            <div class="row p-0" style="font-weight: normal; margin-left: 0.1rem; margin-bottom: 0.1rem;"> 
+                                <span class="border rounded m-0" style="width: auto;">{{ messages["Message"] }}</span>                                
+                            </div>
+        
+                        </div>
+                        
+                    </div>
+
+                </div>              
+
+                <div>
+    
+                    <form class="row m-1" @submit.prevent="post_message">
+            
+                        <div class="col-md-11"><input class="form-control" type="text" v-model="msg"></div>
+                        
+                        <button class="col-md-1 btn btn-success" style="height: 10%; background-color: green;">Post</button>
+            
+                    </form>
+                </div>
+                
             </div>
 
-            <section>
+            <div class="col-md-2" style="overflow: auto; overflow-x: hidden ;">
 
-                <div v-for="user in tab_users">
-                    <router-link @click="store_item(user['id'])" class="nav-link" :to="{path: '/OtherUser'}"> <h6> {{ user['username'] }}  </h6></router-link>  
-                </div>
+                <section style="overflow: auto; overflow-x: hidden ; ">
 
-            </section>
+                    <h3 class="text-center"> <u> Users </u> </h3>
+    
+                    <div class="text-center border border-dark m-2" v-for="user in tab_users">
+                        <router-link @click="store_item(user['id'])" class="nav-link p-2" :to="{path: '/OtherUser'}"> <h6> {{ user['username'] }}  </h6></router-link>  
+                    </div>
+    
+                </section>
+
+            </div>
+    
+
+
+
+
+        </div>
+
 
     </div>
 

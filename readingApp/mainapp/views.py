@@ -3,7 +3,7 @@ from django.http import HttpRequest, HttpResponse, JsonResponse, HttpResponseRed
 from django.views.decorators.csrf import csrf_exempt
 from django.contrib.auth import logout, authenticate, login
 from .forms import LoginForm, SignUpForm
-from .models import MyUser, Forum, Book, Author, AuthorMessages, BookMessages, ForumMessages, Messages, UserGenres, BookReviews, BookTracker, ForumTab, Friends
+from .models import *
 from django.contrib import messages
 from django.contrib.auth import logout
 from PIL import Image
@@ -13,8 +13,9 @@ from re import IGNORECASE
 from random import randint, shuffle
 from math import ceil
 import pandas as pd
-from sklearn.metrics.pairwise import cosine_similarity
+from sklearn.metrics.pairwise import cosine_similarity 
 from sklearn.feature_extraction.text import CountVectorizer
+from django.middleware import csrf
 
 file = pd.read_csv('mainapp\KaggleGoodReadsTest.csv')
 cv = CountVectorizer(stop_words='english')
@@ -96,9 +97,13 @@ def profile_api(request: HttpRequest) -> JsonResponse:
             ]
         })
     if request.method == 'PUT':
+        print (csrf.get_token(request))
         data = json.loads(request.body.decode('utf-8'))
         client = MyUser.objects.get(id=data['user_id'])
         included = False
+        print(f'bitchbiy')
+        print(data['change'])
+        print(data['field'])
         if data['field'] == 'username':
             client.username = data['change']
         elif data['field'] == 'email':
@@ -107,9 +112,13 @@ def profile_api(request: HttpRequest) -> JsonResponse:
             client.password = data['change']
         elif data['field'] == 'date_of_birth':
             client.date_of_birth = data['change']
-        elif data['field'] == 'recommend':
+        elif data['field'] == 'recommended':
             client.recommended = data['change']
+            if not client.recommended:
+                UserGenres.objects.filter(user = client).delete()
+                BookReviews.objects.filter(user = client).delete()
         elif data['field'] == 'private':
+            print(client.private)
             client.private = data['change']
         client.save()
         return JsonResponse ({
@@ -132,6 +141,29 @@ def GetFriends(request:HttpRequest, user_id):
             'friend' : [i.to_dict() for i in Friends.objects.filter(user = MyUser.objects.get(id = user_id))]
         })
 
+@csrf_exempt
+def AddFriends(request:HttpRequest):
+    if request.method == "POST":
+        data = json.loads(request.body.decode('utf-8'))
+        Friends.objects.create(
+            user = MyUser.objects.get(id = data['user']),
+            friend = MyUser.objects.get(id = data['friend']),
+        ).save()
+
+        return JsonResponse({ "Saved" : True })
+
+
+def CheckFriends(request:HttpRequest, user_id, friend_id):
+    if request.method == "GET":
+        try:
+            return JsonResponse({
+                'followed' : Friends.objects.get( user = user_id, friend = friend_id).to_dict()
+            })
+        except Friends.DoesNotExist:
+            return JsonResponse ({
+            'followed' : False
+        })      
+
 
 def Search(request:HttpRequest):
     bruh = []
@@ -143,29 +175,44 @@ def Search(request:HttpRequest):
         bruh.append(file.iloc[number].to_json())
     return JsonResponse({"file" : bruh} , safe=False)
 
+def SearchUserFound(user, condition = None):
+    user = MyUser.objects.get(id = user)
+    user_books = {}
+    kaggle_books  = []
+    for i in BookTracker.objects.filter(user = user):
+        user_books.update( { i.book.id : i.to_dict() } )
+    if condition != None:
+        copy = user_books.copy()
+        for i in user_books:
+            if (user_books[i]['completed'] == condition):
+                del copy[i]
+        user_books = copy
+    for i in user_books:
+        kaggle_books.append((file[file['isbn'] == i]).to_json())
+    return user_books, kaggle_books
+
+
 def SearchUser(request:HttpRequest, user_id:int):
     if request.method == "GET":
-        user = MyUser.objects.get(id = user_id)
-        user_books = []
-        kaggle_books  = []
-        for i in BookTracker.objects.filter(user = user):
-            user_books.append(i.book.id)
-        for i in user_books:
-            kaggle_books.append((file[file['isbn'] == i]).to_json())
-        temp = {}
-        for i in BookTracker.objects.filter(user = user):
-            temp.update( { i.book.id : i.to_dict() } )
+        temp, kaggle_books = SearchUserFound(user_id)
         return JsonResponse({
             "UserBooks" : temp,
             "KaggleBooks" : kaggle_books,
             })
+
+def SearchFilteredUser(request:HttpRequest, user_id:int, condition:int):
+    user_books, kaggle_books = SearchUserFound(user_id, bool(condition))
+    return JsonResponse({
+            "UserBooks" : user_books,
+            "KaggleBooks" : kaggle_books,
+            })
+
 
 def SearchGeneral(request:HttpRequest, search:str):
     if request.method == "GET":
         temp_df = file[file['title'].str.contains(np.str_(search), flags=IGNORECASE)]
         temp = []
         for i in range (len(temp_df)):
-            print(i)
             temp.append(temp_df.iloc[i].to_json())
         return JsonResponse({'file' : temp})
 
@@ -184,7 +231,7 @@ def UnravelMessage( item ) :
 
     return return_value
 
-def getMessage( request: HttpRequest, medium: str , inputid : int):
+def getMessage( request: HttpRequest, medium: str , inputid : int, tab_name :str):
     if request.method == "GET":
         
         existing = False
@@ -193,7 +240,17 @@ def getMessage( request: HttpRequest, medium: str , inputid : int):
 
         if ( medium == 'Book' ):
 
-            item = BookMessages.objects.filter( book =  inputid)
+            try:
+                book = Book.objects.get(id=inputid)
+                try: 
+                    tab = BookTab.objects.get( book = book , name = tab_name)
+                except BookTab.DoesNotExist:
+                    tab = False
+            except Book.DoesNotExist:
+                book = False
+
+            if (book and tab):
+                item = BookMessages.objects.filter( tab = tab )
 
         elif ( medium == 'Forum' ):
 
@@ -203,11 +260,17 @@ def getMessage( request: HttpRequest, medium: str , inputid : int):
         elif ( medium == 'Author' ):
             
             try:
-                author = Author.objects.get(name=inputid)
+                auth = Author.objects.get(name=inputid)
+                try: 
+                    tab = AuthorTab.objects.get( author = auth , name = tab_name)
+                except AuthorTab.DoesNotExist:
+                    tab = False
             except Author.DoesNotExist:
-                author = False
-            if (author):
-                item = AuthorMessages.objects.filter( author = int(author) )
+                auth = False
+
+            if (auth and tab):
+                item = AuthorMessages.objects.filter( tab = tab )
+
 
         if (item):
 
@@ -304,9 +367,19 @@ def postMessage(request: HttpRequest, medium: str) -> JsonResponse:
             else:
                 book = Book.objects.get( id = data['BookID'] )
 
+            try:
+                book_tab = BookTab.objects.get( book = book, name = data['tab'] )
+            except BookTab.DoesNotExist:
+                book_tab = BookTab.objects.create(
+                    book = book,
+                    name = data['tab']
+                )
+                book_tab.save()   
+
             bookmessage_instance = BookMessages.objects.create(
                 message = message_instance,
-                book = book
+                book = book,
+                tab = book_tab
             )
             bookmessage_instance.save()
 
@@ -323,21 +396,27 @@ def postMessage(request: HttpRequest, medium: str) -> JsonResponse:
         elif ( medium == "Author" ):
 
             try:
-                AuthExist = Author.objects.get( name = data['AuthorID'] )
+                auth = Author.objects.get( name = data['AuthorID'] )
             except Author.DoesNotExist:
-                AuthExist = False
-
-            if not ( AuthExist ) :
                 auth = Author.objects.create(
                     name = data['AuthorID']
                 )
                 auth.save()
-            else:
-                auth = Author.objects.get( name = data['AuthorID'] )
+
+            try:
+                auth_tab = AuthorTab.objects.get( author = auth, name = data['tab'] )
+            except AuthorTab.DoesNotExist:
+                auth_tab = AuthorTab.objects.create(
+                    author = auth,
+                    name = data['tab']
+                )
+                auth_tab.save()   
+
 
             AuthorMessages.objects.create(
                 message = message_instance,
-                author = auth
+                author = auth,
+                tab = auth_tab
             ).save()
         
         return JsonResponse( { 'Passed' : True } )
@@ -349,23 +428,45 @@ def GetForums(request : HttpRequest):
         } )
 
 
-def GetTabs(request : HttpRequest, forum_id):
+def GetAllTabs(request : HttpRequest, medium , object_id):
     if request.method == 'GET':
-        return JsonResponse( {
-            "Forums" : [i.to_dict() for i in ForumTab.objects.filter( forum = Forum.objects.get(id = forum_id))]
-        } )
+        if (medium == "Forum"):
+            return JsonResponse( {
+                "Forums" : [i.to_dict() for i in ForumTab.objects.filter( forum = Forum.objects.get(id = object_id))]
+            } )
+        elif (medium == "Author"):
+            try:
+                auth = Author.objects.get(id = object_id)
+                return JsonResponse( {
+                    "Author" : [i.to_dict() for i in AuthorTab.objects.filter( author = auth)]
+                } )
+            except Author.DoesNotExist:
+                return JsonResponse({"Authour" : False})
+        elif (medium == "Book"):
+            try:
+                book = Book.objects.get(id = object_id)
+                return JsonResponse( {
+                    "Book" : [i.to_dict() for i in BookTab.objects.filter( book = book)]
+                } )
+            except Book.DoesNotExist:
+                return JsonResponse({"Book" : False})
 
 
 
-def GetForumTabs(request : HttpRequest , forum_id, tab_name):
+def GetTab(request : HttpRequest , forum_id, tab_name):
     if request.method == 'GET':
         return JsonResponse( {
             "Forums" : [i.to_dict() for i in ForumMessages.objects.filter( tab = ForumTab.objects.get( forum = Forum.objects.get(id = forum_id) , name = tab_name) )]
         } )
 
-def GetTabUsers(request : HttpRequest, forum_id):
+def GetTabUsers(request : HttpRequest, medium:str, tab_id):
     if (request.method == 'GET'):
-        messages = ForumMessages.objects.filter(tab = forum_id)
+        if medium == "forum":
+            messages = ForumMessages.objects.filter(tab = tab_id)
+        if medium == "author":
+            messages = AuthorMessages.objects.filter(tab = tab_id)
+        if medium == "book":
+            messages = BookMessages.objects.filter(tab = tab_id)
         users = []
         for i in messages:
             if i.message.user.id not in users:
@@ -373,6 +474,56 @@ def GetTabUsers(request : HttpRequest, forum_id):
         return JsonResponse ({
             'tab' : [MyUser.objects.get(id = i).to_dict() for i in users]
         })
+
+@csrf_exempt
+def CreateTab(request : HttpRequest):
+    if request.method == "POST":
+        data  = json.loads( request.body.decode('utf-8') )
+        
+        
+
+        if (data['medium'] == "forum"):
+            tab_forum = Forum.objects.get(id = data['forum'])
+            try:
+                if (ForumTab.objects.get(forum = tab_forum, name = data['name'])):
+                    return JsonResponse( { "Posted" : False } )
+            except ForumTab.DoesNotExist:
+                ForumTab.objects.create( forum = tab_forum, name = data['name'] ).save()
+
+        elif (data['medium'] == "author"):
+            author_forum = Author.objects.get(id = data['author'])
+            try:
+                if (AuthorTab.objects.get(author = author_forum, name = data['name'])):
+                    return JsonResponse( { "Posted" : False } )
+            except AuthorTab.DoesNotExist:
+                AuthorTab.objects.create( author = author_forum, name = data['name'] ).save()
+
+        elif (data['medium'] == "book"):
+            book_forum = Book.objects.get(id = data['book'])
+            try:
+                if (BookTab.objects.get(book = book_forum, name = data['name'])):
+                    return JsonResponse( { "Posted" : False } )
+            except BookTab.DoesNotExist:
+                BookTab.objects.create( book = book_forum, name = data['name'] ).save()
+
+
+        return JsonResponse( { "Posted" : True } )
+
+def CheckAuthor(request:HttpRequest, author_name):
+    if request.method == "GET":
+        try:
+            return JsonResponse({'Author' : Author.objects.get(name = author_name).to_dict()})
+        except Author.DoesNotExist:
+            return JsonResponse({'Author' : False})
+
+def AuthorBooks(request:HttpRequest, author_name:str):
+    if request.method == "GET":
+        if author_name != "Unknown":
+            return JsonResponse({
+                'Books' : file.loc[file['author'].str.contains(author_name)].to_json()
+            })
+        return JsonResponse({'Books' : False})
+
 
 @csrf_exempt
 def CreateForum(request : HttpRequest):
@@ -390,34 +541,24 @@ def CreateForum(request : HttpRequest):
 
         return JsonResponse( { "Posted" : True } )
 
-@csrf_exempt
-def CreateForumTab(request : HttpRequest):
-    if request.method == "POST":
-        data  = json.loads( request.body.decode('utf-8') )
-        
-        tab_forum = Forum.objects.get(id = data['forum'])
-
-        try:
-            if (ForumTab.objects.get(forum = tab_forum, name = data['name'])):
-                return JsonResponse( { "Posted" : False } )
-        except ForumTab.DoesNotExist:
-            ForumTab.objects.create( forum = tab_forum, name = data['name'] ).save()
-
-
-
-        return JsonResponse( { "Posted" : True } )
 
 def GetRecommended(request: HttpRequest, start : int):
     if request.method == "GET":
 
-        UserBooks = BookReviews.objects.filter(user = MyUser.objects.get(id = request.session.__getitem__("_auth_user_id")))
+        myuser = MyUser.objects.get(id = request.session.__getitem__("_auth_user_id"))
+                                    
+        if not myuser.recommended:
+            return JsonResponse({'Found' : False})
+ 
+
+        UserBooks = BookReviews.objects.filter(user = myuser)
 
         if not (UserBooks):
             return JsonResponse({"Found" : False})
 
         MeanRating = sum([i.rating for i in UserBooks])/len(UserBooks) 
         print("I think this works : " , MeanRating)
-        print(UserBooks)
+        print(f'pop goes the weasal {UserBooks}')
         #sd = statistics.stdev([i.rating for i in UserBooks])
 
         AllBooks = []
@@ -544,6 +685,15 @@ def UpdateCollection(request:HttpRequest):
             return JsonResponse({'Updated' : True})
         return JsonResponse({'Updated' : False})
 
+
+def addtodatabase(request):
+    
+    for i in file:
+        for j in file[i]:
+            print (j, end=" ")
+        print()
+
+    return JsonResponse({})
 
 
 def logout_view(request):

@@ -2,6 +2,7 @@
 import { objectToString } from '@vue/shared'
 import { defineComponent } from 'vue'
 import { useRoute } from 'vue-router'
+import {CSRFToken} from './Cookie.js'
 
 export default defineComponent( {
     created() {
@@ -9,6 +10,7 @@ export default defineComponent( {
         this.get_owner_id()
         this.GetBook()
         this.fetch_reviews()
+        this.fetch_tabs()
     },
     data() {
         return {
@@ -28,6 +30,13 @@ export default defineComponent( {
             all_messages : [],
             msg: "",
             LastUser : 0,
+
+            tab_users : [],
+
+            all_tabs: [],
+            new_tab: "",
+            tab_id: 0,
+            tab : "main",
         }
     },   
     methods : {
@@ -66,7 +75,7 @@ export default defineComponent( {
             this.user_reviews = response['Reviews']
         },
         async fetch_Messages() {
-            let data = await fetch(("http://localhost:8000/GetMessage/Book/" + this.ItemISBN ) , {
+            let data = await fetch(("http://localhost:8000/GetMessage/Book/" + this.ItemISBN + "/" + this.tab) , {
                 method: 'GET',
                 credentials: "include",
                 mode: "cors",
@@ -78,15 +87,46 @@ export default defineComponent( {
             }
             let LU = -1
             for (let i =0 ; i < this.all_messages.length; i++) {
-                if (LU == this.all_messages[i]['UserID']) {
-                    this.all_messages[i]['UserID'] = -1
-                }
-                    
+                if (LU == this.all_messages[i]['UserID']['id']) {
+                    this.all_messages[i]['UserID']['id'] = -1
+                }                    
                 else
-                LU = this.all_messages[i]['UserID']
+                    LU = this.all_messages[i]['UserID']['id']
             }
              
             
+        },
+        async fetch_tabs() {
+            let data = await fetch(("http://localhost:8000/GetAllTabs/Book/" + this.ItemISBN) , {
+                method: 'GET',
+                credentials: "include",
+                mode: "cors",
+                referrerPolicy: "no-referrer",
+            })
+            let response = await data.json()
+            response = response['Book']
+            this.all_tabs = []
+            console.log("wats new scooby");
+            console.log(response);
+            for (let key in response) {
+                this.all_tabs.push(response[key]['name'])
+                console.log(response[key]['name'] + response[key]['id'] + this.tab);
+                if (response[key]['name'] == this.tab)
+                    this.tab_id = response[key]['id']
+            }
+            console.log(this.tab_id);
+            this.fetch_user()
+        },
+        async fetch_user() {
+            let data = await fetch(("http://localhost:8000/GetTabUsers/book/" + this.tab_id) , {
+                method: 'GET',
+            })
+            let response = await data.json()
+            console.log(response);
+            response = response['tab']
+            console.log(response);
+            this.tab_users = []
+            this.tab_users = response
         },
         async fetch_tracker() {
             console.log("ello");
@@ -96,6 +136,11 @@ export default defineComponent( {
                 credentials: "include",
                 mode: "cors",
                 referrerPolicy: "no-referrer",
+                headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json',
+                'X-CSRFToken': CSRFToken
+                },
                 body: JSON.stringify({
                     isbn : this.ItemISBN,
                     name : this.item['title'][this.ItemIndex],
@@ -121,6 +166,11 @@ export default defineComponent( {
                 credentials: "include",
                 mode: "cors",
                 referrerPolicy: "no-referrer",
+                headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json',
+                'X-CSRFToken': CSRFToken
+                },
                 body: JSON.stringify({
                     UserID: this.item_owner,
                     BookID : this.item ['isbn'][this.ItemIndex],
@@ -146,12 +196,17 @@ export default defineComponent( {
                 credentials: "include",
                 mode: "cors",
                 referrerPolicy: "no-referrer",
+                headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json',
+                'X-CSRFToken': CSRFToken
+                },
                 body: JSON.stringify({
                     BookID: this.item['isbn'][this.ItemIndex],
                     msg: this.msg,
                     total_pages : this.item['pages'][this.ItemIndex],
-                    BookName: this.item['title'][this.ItemIndex]
-                    
+                    BookName: this.item['title'][this.ItemIndex],
+                    tab : this.tab,  
                 })
             })
             let response = await data.json()
@@ -159,6 +214,29 @@ export default defineComponent( {
                 this.fetch_Messages()
             }
             this.msg = ""
+        },
+        async create_tab() {
+            if (this.tab!="") 
+            {
+                let data = await fetch(("http://localhost:8000/CreateTab"), {
+                method: 'POST',
+                credentials: "include",
+                mode: "cors",
+                referrerPolicy: "no-referrer",
+                headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json',
+                'X-CSRFToken': CSRFToken
+                },
+                body: JSON.stringify({
+                    medium : 'book',
+                    book: this.ItemISBN,
+                    name: this.new_tab,
+                })
+            })
+            let response = await data.json()
+            this.fetch_tabs()
+            }
         },
         async check_tracker() {
             console.log(this.item_owner);
@@ -175,6 +253,11 @@ export default defineComponent( {
                 credentials: "include",
                 mode: "cors",
                 referrerPolicy: "no-referrer",
+                headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json',
+                'X-CSRFToken': CSRFToken
+                },
                 body: JSON.stringify({
                     book_id : this.ItemISBN,
                     user_id : this.item_owner,
@@ -320,40 +403,91 @@ export default defineComponent( {
         <hr>
 
 
-        <div>
-            <h3 style="text-decoration: underline;">Chat</h3>
-            <div>
-                
-                <div class="table m-3">
+        
+        <div class="mt-3" style="height: 100rem;">
 
-                    <div class="p-1 border border-dark rounded" style="overflow: auto; overflow-x: hidden; height: 20rem;">
+            <div class="row h-100">
 
-                        <div class="" v-for="messages in all_messages">
-    
-                            <div style="border-style: none; text-decoration: underline; font;" v-if="messages['UserID'] != -1" class="row">
-                                <b>{{ messages["UserID"] }}</b> 
-                            </div>
-    
-                            <div class="row p-0" style="font-weight: normal; margin-left: 0.1rem; margin-bottom: 0.1rem;"> 
-                                <span class="border rounded m-0" style="width: auto;">{{ messages["Message"] }}</span>                                
-                            </div>
+                <div class="col-md-2">
 
+                    <form class="row m-1 mt-3" @submit.prevent="create_tab">
+
+                        <div class="col-sm-9"><input class="form-control" type="text" v-model="new_tab" placeholder="Create Tab" ></div>
+
+                        <button class="btn btn-primary col-md-3">Create</button>
+
+                    </form>
+
+                    <hr>
+                    
+                    <section style="overflow: auto; overflow-x: hidden ; ">
+                        <div v-for="tab in all_tabs" class="text-center p-2 m-2 border border-dark" style="cursor: pointer;" >
+                            <i v-if="tab == current_tab" class="text-secondary" >{{ tab }}</i>
+                            <b v-else @click="change_tab(tab)" >{{ tab }}</b>
                         </div>
-                        
+                    </section>
+                    
+                </div>
+        
+
+                <div class="col-md-8 h-50 ">   
+                    
+                    <div class="border border-dark rounded" style="height: 100%;">
+
+                        <div class="p-1 row" style="overflow: auto; overflow-x: hidden ; width: 100%;" >
+            
+                            <div class="" v-for="messages in all_messages">
+            
+                                <div style="border-style: none; text-decoration: underline; font;" v-if="messages['UserID']['id'] != -1" class="row">
+                                    <b>{{ messages["UserID"]['username'] }}</b> 
+                                </div>
+            
+                                <div class="row p-0" style="font-weight: normal; margin-left: 0.1rem; margin-bottom: 0.1rem;"> 
+                                    <span class="border rounded m-0" style="width: auto;">{{ messages["Message"] }}</span>                                
+                                </div>
+            
+                            </div>
+                            
+                        </div>
+
                     </div>
 
-                </div>
-            </div>
-            <div>
-                <form class="row m-1" @submit.prevent="post_message">
 
-                    <div class="col-md-11"><input class="form-control" type="text" v-model="msg"></div>
+                    <div>
+        
+                        <form class="row m-1" @submit.prevent="post_message">
+                
+                            <div class="col-md-11"><input class="form-control" type="text" v-model="msg"></div>
+                            
+                            <button class="col-md-1 btn btn-success" style="height: 10%; background-color: green;">Post</button>
+                
+                        </form>
+                    </div>
                     
-                    <button class="col-md-1 btn btn-primary">Post</button>
+                </div>
 
-                </form>
+                <div class="col-md-2" style="overflow: auto; overflow-x: hidden ;">
+
+                    <section style="overflow: auto; overflow-x: hidden ; ">
+
+                        <h3 class="text-center"> <u> Users </u> </h3>
+        
+                        <div class="text-center border border-dark m-2" v-for="user in tab_users">
+                            <router-link @click="store_user(user['id'])" class="nav-link p-2" :to="{path: '/OtherUser'}"> <h6> {{ user['username'] }}  </h6></router-link>  
+                        </div>
+        
+                    </section>
+
+                </div>
+        
+
+
+
+
             </div>
-        </div> 
+
+
+        </div>
 
     </div>
 

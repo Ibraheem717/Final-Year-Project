@@ -1,5 +1,6 @@
  <script>
 import { defineComponent } from 'vue'
+import {CSRFToken} from './Cookie.js'
 
 export default defineComponent( {
     created() {
@@ -30,7 +31,11 @@ export default defineComponent( {
        async CreateForum() {
         let data = await fetch("http://localhost:8000/CreateForum", 
         {   method: 'POST',
-            headers : {'Content-Type':'application/json'},
+            headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json',
+            'X-CSRFToken': CSRFToken
+            },
             body: JSON.stringify({
                 user : this.user_id,
                 Name : this.Name

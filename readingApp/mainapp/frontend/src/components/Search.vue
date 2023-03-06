@@ -1,7 +1,6 @@
 <script>
 import { defineComponent } from 'vue'
 
-
 export default defineComponent( {
     created() {
         this.get_owner_id()
@@ -45,6 +44,9 @@ export default defineComponent( {
         this.total_items = tempArr
         console.log(this.total_items);      
        },
+       async bruh(request) {
+        let response = await fetch(("http://localhost:8000/add"), {method: "GET" })
+       },
     },
 } )
 
@@ -52,6 +54,7 @@ export default defineComponent( {
 
 <template>
 
+    <button @click="bruh">okosdkfosdjfsd</button>
 
     <div class="p-5 text-left bg-light" style="height:100%">
 
