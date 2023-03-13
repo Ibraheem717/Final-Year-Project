@@ -74,7 +74,7 @@ export default defineComponent( {
                 })
             })
             let data = await response.json()
-
+            this.CheckFriends()
             // this.pic = data.profile_image
             // console.log(this.pic);
             
@@ -119,30 +119,28 @@ export default defineComponent( {
 
 </script>
 <template>
-    <div class="p-5 text-left bg-light" style="height:100%">
+    <div class="p-5 bg-light" style="height:100%">
 
 
-        <div class="text-left bg-light row">
+        <div class="bg-light d-flex">
 
-            <div class="jumbotron">
+            <div class="p-2">
                 <h1 class="display-4">Profile</h1>
                 
             </div>
 
-            <div v-if="included">
-                <form class="row"  @submit.prevent="AddFriend()" >
-                    <button>Add Friend</button>
-                </form>
+            <div class="ms-auto p-2 d-flex align-content-center flex-wrap" v-if="!included">
+                <button @click="AddFriend" class="btn btn-primary">Add Friend</button>
             </div>
 
             <div v-else>
                 Already Following
             </div>
 
-            <hr class="my-4">
 
         </div>
 
+        <hr class="my-4">
 
         <div v-if="private == false">
 

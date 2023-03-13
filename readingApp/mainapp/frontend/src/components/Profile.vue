@@ -96,12 +96,11 @@ export default defineComponent( {
             let data = await response.json()
             this.friends = data['friend']
 
-            // this.pic = data.profile_image
-            // console.log(this.pic);
+            console.log("wtf");
+            console.log(this.friends);
             
         },
         async edit_profile(user_id, data_change, data_field) {
-            console.log(data_change);
             let delet = false
             if (data_field == "recommended") {
                 if (data_change == false){
@@ -126,8 +125,8 @@ export default defineComponent( {
                 this.old_password = ""
                 let data = await response.json()
                 this.included = data.included
-                if (this.included == true){
-                    alert("Username already exists")
+                if (this.included == false){
+                    alert("Invalid data inputted : " + data['msg'])
                 } else {
                     this.user = data.myUser
                     this.fetch_profile()
@@ -158,7 +157,7 @@ export default defineComponent( {
                     <div class="col-md-8 d-flex justify-content-end" style="margin-top: 1rem;">
                         <form class="row" style="margin-right: 3rem;" @submit.prevent="edit_profile(user_id, username, 'username')" >
                             <div class="col-md-11">
-                                <input class="form-control" type="text" v-model="username">
+                                <input class="form-control" type="text" v-model="username" placeholder="New username">
                             </div>
                             <div class="col-md-1">
                                 <button class="btn btn-secondary">Edit</button>
@@ -174,10 +173,10 @@ export default defineComponent( {
                     <div class="col-md-8 d-flex justify-content-end" style="margin-top: 1rem; margin-right: 0; padding-right: 0;">
                         <form class="row" style="margin-right: 0; padding-right: 0;" @submit.prevent="edit_profile(user_id, password, 'password')" >                        
                             <div class="col-md-5">
-                                <input class="form-control" type="text" v-model="old_password">
+                                <input class="form-control" type="password" v-model="old_password" placeholder="Old Password">
                             </div>
                             <div class="col-md-5">
-                                <input class="form-control" type="text" v-model="password">
+                                <input class="form-control" type="password" v-model="password" placeholder="New Password">
                             </div>
                             <div class="col-md-1" style="padding-right: 0;">
                                 <button class="btn btn-secondary">Edit</button>
@@ -221,7 +220,7 @@ export default defineComponent( {
     
                 <div class="row ">
                     <div class="col-md-4" >
-                        <p class="display-6">Private: {{ private }}</p>
+                        <p class="display-6">Private: </p>
                     </div>
                     <div class="col-md-8 d-flex justify-content-end">
                         <form class="row"  @submit.prevent="edit_profile(user_id, private, 'private')" >
@@ -259,7 +258,7 @@ export default defineComponent( {
 
                 <div v-for="friend in friends" class="row p-2">
                     
-                    <router-link @click="store_user(friend['friend']['username'])" class="nav-link text-center" :to="{path: '/OtherUser'}"> <b>{{ friend['friend']['username'] }}</b> </router-link>  
+                    <router-link @click="store_user(friend['friend']['id'])" class="nav-link text-center" :to="{path: '/OtherUser'}"> <b>{{ friend['friend']['username'] }}</b> </router-link>  
                 </div>
 
             </div>

@@ -25,6 +25,9 @@ export default defineComponent( {
             let data = await response.json()
             this.item_owner = data.user_id
         },
+        async store_item (item) {
+            localStorage.setItem('item', item)
+       },
         async GetRecomended() {
             this.recomended = []
             this.End = false
@@ -68,7 +71,7 @@ export default defineComponent( {
 
         <div v-if="recomended.length==0">
 
-            <h1>No books read</h1>
+            <h1>No books rereviewed</h1>
 
         </div>
 
@@ -94,7 +97,7 @@ export default defineComponent( {
                     <td class="col-sm-2 p-2"><router-link @click="store_item(items['isbn'])" class="nav-link p-0" :to="{path: '/Book'}"> {{items['title']}} </router-link>  </td>
     
                     <td class="col-sm-2 p-2"> 
-                        <img :src="items['img']" class="img-fluid p-0">
+                        <img :src="items['img']" class="img-fluid p-0" width="300" height="400" alt="No Image">
                     </td>
     
                     <td class="align-middle col-sm-2 p-2" > 
@@ -146,38 +149,6 @@ export default defineComponent( {
                 </tr>
     
             </table>
-    
-            <form class="row" @submit.prevent="GetRecomended">
-    
-                <div class="col-md-5"></div>
-    
-                <div class="col-md-1" v-if="RecomendedStart > 0"><button style="border: 0px; background: 000;" @click="RecomendedStart--">
-    
-                    <img class="img-fluid" style="width: 1rem; -webkit-transform: scaleX(-1); transform: scaleX(-1); background: 000" src="../assets/Arrow.jpg">
-    
-                </button></div>
-    
-                <div class="col-md-1" v-else><button style="border: 0px; background: 000;">
-    
-                    <img class="img-fluid" style="width: 1rem; -webkit-transform: scaleX(-1); transform: scaleX(-1); background: 000" src="../assets/Arrow.jpg">
-    
-                </button></div>
-    
-                <div class="col-md-1 " style="margin-left: 2rem;"> {{ RecomendedStart }} </div> 
-    
-                <div class="col-md-1" v-if="End == false"><button style="border: 0px; background: 000;" @click="RecomendedStart++">
-    
-                    <img class="img-fluid" style="width: 1rem; background: 000" src="../assets/Arrow.jpg">
-    
-                </button></div>
-    
-                <div class="col-md-1" v-else><button style="border: 0px; background: 000;">
-    
-                    <img class="img-fluid" style="width: 1rem; background: 000;" src="../assets/Arrow.jpg">
-    
-                </button></div>
-    
-            </form>
     
         </div> 
 

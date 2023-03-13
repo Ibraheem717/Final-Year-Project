@@ -93,7 +93,7 @@ export default defineComponent( {
                 else
                     LU = this.all_messages[i]['UserID']['id']
             }
-             
+            this.fetch_tabs()
             
         },
         async fetch_tabs() {
@@ -183,10 +183,13 @@ export default defineComponent( {
             })
             let response = await data.json()
             console.log(response);
-            if (response.View.length > 0)
-                alert("Review Posted")
-            else
+            if (response.View== "False")
                 alert("Already Reviewed")
+            else {
+                
+                alert("Review Posted")
+                this.fetch_reviews()
+            }
         },
         async post_message() {
             if (this.msg!="") 
@@ -326,7 +329,9 @@ export default defineComponent( {
 
         <div class="row">
 
-            <div class="col-1 m-5"> <a :href="item['link'][ItemIndex]"> <img :src="item['img'][ItemIndex]" class="img-fluid"> </a></div>
+            <div class="col-1 m-5 row"> <a :href="item['link'][ItemIndex]"> 
+                <img :src="item['img'][ItemIndex]" class="img-fluid text-center" width="180" height="250"> 
+            </a></div>
 
             <form class="col-md-3" style="margin: 2rem;" @submit.prevent="post_review">                
                     
@@ -348,9 +353,9 @@ export default defineComponent( {
                 
             </form>
 
-            <div v-if="user_reviews">
+            <div class="col-md-7" v-if="user_reviews">
 
-                <div class="col-md-6 m-4 row" v-if="user_reviews.length">
+                <div class="row" v-if="user_reviews.length">
     
                     <div class="col-md-1 d-flex justify-content-center" v-if="review_counter > 0"><button style="border: 0px; background: 000;" @click="review_counter--">
     
@@ -385,9 +390,12 @@ export default defineComponent( {
                     </button></div>
                     
                 </div>
+                
+                <div class="text-center row h-100" v-else>
+                    <b class="align-self-center"> No Reviews </b> 
+                </div>
 
             </div>
-            
 
         </div>
         
@@ -434,11 +442,11 @@ export default defineComponent( {
                     
                     <div class="border border-dark rounded" style="height: 100%;">
 
-                        <div class="p-1 row" style="overflow: auto; overflow-x: hidden ; width: 100%;" >
+                        <div class="p-4 row" style="overflow: auto; overflow-x: hidden ; width: 100%;" >
             
                             <div class="" v-for="messages in all_messages">
             
-                                <div style="border-style: none; text-decoration: underline; font;" v-if="messages['UserID']['id'] != -1" class="row">
+                                <div style="border-style: none; text-decoration: underline; font;" v-if="messages['UserID']['id'] != -1" class="row p-1">
                                     <b>{{ messages["UserID"]['username'] }}</b> 
                                 </div>
             

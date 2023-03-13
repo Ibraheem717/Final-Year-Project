@@ -115,8 +115,15 @@ class ForumTab (models.Model):
 
 class Book (models.Model):
     id = models.CharField(max_length=13 , primary_key=True)
-    name = models.CharField(max_length=24)
+    name = models.TextField(max_length=240)
     pages = models.IntegerField(default=0)
+    # img = models.TextField(max_length=240)
+    # desc = models.TextField(max_length=600)
+    # genre = models.TextField(max_length=600)
+    # link = models.TextField(max_length=240)
+    # avgrating = models.DecimalField()
+    # reviews = models.IntegerField(default=0)
+    # totalratings = models.IntegerField(default=0)
 
     def GetISBN(self):
         return self.id

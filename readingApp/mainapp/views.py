@@ -1,5 +1,6 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.http import HttpRequest, HttpResponse, JsonResponse, HttpResponseRedirect, FileResponse
+from django.contrib.auth.hashers import check_password
 from django.views.decorators.csrf import csrf_exempt
 from django.contrib.auth import logout, authenticate, login
 from .forms import LoginForm, SignUpForm
@@ -18,32 +19,22 @@ from sklearn.feature_extraction.text import CountVectorizer
 from django.middleware import csrf
 
 file = pd.read_csv('mainapp\KaggleGoodReadsTest.csv')
+#Vectorize English words into tokens for comparison
 cv = CountVectorizer(stop_words='english')
+#Converts all the genres into tokens 
 vectors = cv.fit_transform(file['genre'].apply(lambda x: np.str_(x))).toarray()
+#Compares the token together and checks their similarity, displays an out starting from their mmost similat to least 
 similarity = cosine_similarity(vectors)
 RecommendedBooks = []
 increment = 0
 
+# Authenticates user if user exists using django methods
 def index(request: HttpRequest):
     if request.method =='POST':
         form = LoginForm(request.POST, request.FILES)
         user = authenticate(username=form['username'].data, password=form['password'].data)
         if user:
             login(request, user)
-            payload = {
-                'id' : user.id,
-                'exp' : datetime.datetime.utcnow() + datetime.timedelta(minutes=60),
-                'iat' : datetime.datetime.utcnow()
-            } 
-
-            # token  = jwt.encode(payload, 'secret', algorithm='HS256').decode('utf-8')
-
-            # reponse = Response()
-
-            # response.set_cookie(key='jwt', value=token, httponly=True)
-            # reponse.data = {
-            #     'jwt' : token
-            # }
 
             return HttpResponseRedirect("http://localhost:5173/Search")
 
@@ -63,7 +54,9 @@ def signup(request: HttpRequest) -> HttpResponse:
     Wrong = False
 
     if (request.method == 'POST'):
+        #Takes data from 'Forms'  made by 'Forms.py'
         form = SignUpForm(request.POST)
+        # Checki form is valid, then save else give message
         if form.is_valid():
             form.save()
             messages.success(request,'Your account has been created')
@@ -71,6 +64,7 @@ def signup(request: HttpRequest) -> HttpResponse:
             Wrong = True
             messages.error(request,'Invalid sign up details')
 
+    #Message output depending on validity
     form = SignUpForm()
     return render( request, "mainapp/signup.html" , { 
         'form' : form,
@@ -80,6 +74,7 @@ def signup(request: HttpRequest) -> HttpResponse:
 
 def get_user(request: HttpRequest) -> JsonResponse:
     if request.method=='GET':
+        # Get Login user
         return JsonResponse ( {
             'user_id' : request.session.__getitem__("_auth_user_id")
         }, safe=False)
@@ -87,42 +82,56 @@ def get_user(request: HttpRequest) -> JsonResponse:
 @csrf_exempt
 def profile_api(request: HttpRequest) -> JsonResponse:
     if request.method == 'GET':
+        # Gets current user logged
         data = json.loads(request.session.__getitem__("_auth_user_id"))
         user = MyUser.objects.get(id=data)
-        # temp = user.getProfilePicture()
-        # user_picture = Image.open(user.getProfilePicture(), mode='r')
         return JsonResponse ({
             'myUser' : [
                 user.to_dict()
             ]
         })
     if request.method == 'PUT':
-        print (csrf.get_token(request))
         data = json.loads(request.body.decode('utf-8'))
+        # Fetch user
         client = MyUser.objects.get(id=data['user_id'])
         included = False
-        print(f'bitchbiy')
-        print(data['change'])
-        print(data['field'])
+        # Change Username  
         if data['field'] == 'username':
+            # Check if username already exist
+            if (MyUser.objects.get(username = data['change'])):
+                return JsonResponse({
+                    "included" : False,
+                    "msg" : "User exists"
+                })
             client.username = data['change']
+        # Change e-mail
         elif data['field'] == 'email':
             client.email = data['change']
+        # Change password
         elif data['field'] == 'password':
-            client.password = data['change']
+            # Compares current and user inputted
+            if check_password(data['old_pass'], client.password ):
+                client.set_password(data['change'])
+            else:
+                return JsonResponse({
+                    "included" : False,
+                    "msg" : "Wrong Password"
+                })
+        # Chagne DOB
         elif data['field'] == 'date_of_birth':
             client.date_of_birth = data['change']
+        # Change Recommendation
         elif data['field'] == 'recommended':
             client.recommended = data['change']
             if not client.recommended:
+                # Delete info about user
                 UserGenres.objects.filter(user = client).delete()
                 BookReviews.objects.filter(user = client).delete()
+        # Privitisation
         elif data['field'] == 'private':
-            print(client.private)
             client.private = data['change']
         client.save()
         return JsonResponse ({
-            'myUser': [data],
             'included': included,
         })
 
@@ -137,6 +146,7 @@ def GetForeignUser(request : HttpRequest, user):
 
 def GetFriends(request:HttpRequest, user_id):
     if request.method == "GET":
+        print 
         return JsonResponse ({
             'friend' : [i.to_dict() for i in Friends.objects.filter(user = MyUser.objects.get(id = user_id))]
         })
@@ -164,7 +174,7 @@ def CheckFriends(request:HttpRequest, user_id, friend_id):
             'followed' : False
         })      
 
-
+# Returns 20 random books
 def Search(request:HttpRequest):
     bruh = []
     counter = []
@@ -175,6 +185,7 @@ def Search(request:HttpRequest):
         bruh.append(file.iloc[number].to_json())
     return JsonResponse({"file" : bruh} , safe=False)
 
+# Get filtered books
 def SearchUserFound(user, condition = None):
     user = MyUser.objects.get(id = user)
     user_books = {}
@@ -191,7 +202,7 @@ def SearchUserFound(user, condition = None):
         kaggle_books.append((file[file['isbn'] == i]).to_json())
     return user_books, kaggle_books
 
-
+# Get all user books
 def SearchUser(request:HttpRequest, user_id:int):
     if request.method == "GET":
         temp, kaggle_books = SearchUserFound(user_id)
@@ -200,6 +211,7 @@ def SearchUser(request:HttpRequest, user_id:int):
             "KaggleBooks" : kaggle_books,
             })
 
+# Get read or completed books
 def SearchFilteredUser(request:HttpRequest, user_id:int, condition:int):
     user_books, kaggle_books = SearchUserFound(user_id, bool(condition))
     return JsonResponse({
@@ -207,7 +219,7 @@ def SearchFilteredUser(request:HttpRequest, user_id:int, condition:int):
             "KaggleBooks" : kaggle_books,
             })
 
-
+# Search for books 
 def SearchGeneral(request:HttpRequest, search:str):
     if request.method == "GET":
         temp_df = file[file['title'].str.contains(np.str_(search), flags=IGNORECASE)]
@@ -216,6 +228,7 @@ def SearchGeneral(request:HttpRequest, search:str):
             temp.append(temp_df.iloc[i].to_json())
         return JsonResponse({'file' : temp})
 
+#Grab single books
 def SearchIndivisual(request:HttpRequest, code:str):
     return JsonResponse({'Book' : file.loc[file['isbn'] == np.str_(code)].to_json()})
 
@@ -231,6 +244,7 @@ def UnravelMessage( item ) :
 
     return return_value
 
+# Get message if they exist
 def getMessage( request: HttpRequest, medium: str , inputid : int, tab_name :str):
     if request.method == "GET":
         
@@ -287,6 +301,7 @@ def getMessage( request: HttpRequest, medium: str , inputid : int, tab_name :str
 
 def GetReview(request : HttpRequest, BookISBN : str) :
     if (request.method == 'GET'):
+        # Get review if it exist
         try:
             found_book = Book.objects.get(id = BookISBN)
         except Book.DoesNotExist:
@@ -299,10 +314,9 @@ def postReview(request: HttpRequest):
     if request.method == 'POST':
         data = json.loads( request.body.decode('utf-8') )
 
-        UserGenre = []
-
         CurrentUser = MyUser.objects.get(id = data['UserID'])
 
+        # Create book if it doesnt exist
         try:
             CurrentBook = Book.objects.get(id = data['BookID'])
         except Book.DoesNotExist:
@@ -312,10 +326,11 @@ def postReview(request: HttpRequest):
                 pages = data['total_pages']
             )
             CurrentBook.save()
-        print(CurrentBook)
 
+        # Makes a review if the user hasnt already made a review
         try:
             AlreadyReview = BookReviews.objects.get(book = CurrentBook, user = CurrentUser)
+            return JsonResponse({"View" : False})
         except BookReviews.DoesNotExist:
             BookReviews.objects.create(
                 user = CurrentUser,
@@ -324,13 +339,10 @@ def postReview(request: HttpRequest):
                 review = data['Review']
             ).save()
             AlreadyReview = False
-
             
-        print("This is herer : " , file[file['title'].str.contains(data['BookName'])])
         data['Genres'] = data['Genres'].split(',')
-        print(data['Genres'])
 
-
+        # Update or create user prefered genres
         for i in data['Genres']:
             try :
                 FindGenre = UserGenres.objects.get(genre = i)
@@ -348,6 +360,8 @@ def postReview(request: HttpRequest):
 def postMessage(request: HttpRequest, medium: str) -> JsonResponse:
     if request.method == 'POST':
         data = json.loads( request.body.decode('utf-8') )
+
+        #Create message
         message_instance = Messages.objects.create(
             user = MyUser.objects.get( id = request.session.__getitem__("_auth_user_id")),
             message = data['msg'],
@@ -356,7 +370,7 @@ def postMessage(request: HttpRequest, medium: str) -> JsonResponse:
         message_instance.save()
 
         if ( medium == "Book" ):
-
+            # Create book if it doesnt exist
             if not (Book.objects.filter( id = data['BookID'])) :
                 book = Book.objects.create(
                     id = data['BookID'],
@@ -367,6 +381,7 @@ def postMessage(request: HttpRequest, medium: str) -> JsonResponse:
             else:
                 book = Book.objects.get( id = data['BookID'] )
 
+            # Create tab if it doesnt exist
             try:
                 book_tab = BookTab.objects.get( book = book, name = data['tab'] )
             except BookTab.DoesNotExist:
@@ -376,6 +391,7 @@ def postMessage(request: HttpRequest, medium: str) -> JsonResponse:
                 )
                 book_tab.save()   
 
+            # Make book message
             bookmessage_instance = BookMessages.objects.create(
                 message = message_instance,
                 book = book,
@@ -383,6 +399,7 @@ def postMessage(request: HttpRequest, medium: str) -> JsonResponse:
             )
             bookmessage_instance.save()
 
+        # Make forum message
         elif ( medium == "Forum" ):
 
             forum = Forum.objects.get( id = data['ForumID'] )
@@ -393,8 +410,10 @@ def postMessage(request: HttpRequest, medium: str) -> JsonResponse:
                 tab = ForumTab.objects.get( forum = forum , name = data['tab'])
             ).save()
 
+        # Make author message
         elif ( medium == "Author" ):
 
+            # Create author if they don't exist
             try:
                 auth = Author.objects.get( name = data['AuthorID'] )
             except Author.DoesNotExist:
@@ -403,6 +422,7 @@ def postMessage(request: HttpRequest, medium: str) -> JsonResponse:
                 )
                 auth.save()
 
+            # Create tab if it doesnt exist
             try:
                 auth_tab = AuthorTab.objects.get( author = auth, name = data['tab'] )
             except AuthorTab.DoesNotExist:
@@ -452,13 +472,14 @@ def GetAllTabs(request : HttpRequest, medium , object_id):
                 return JsonResponse({"Book" : False})
 
 
-
+# Poor programming
 def GetTab(request : HttpRequest , forum_id, tab_name):
     if request.method == 'GET':
         return JsonResponse( {
             "Forums" : [i.to_dict() for i in ForumMessages.objects.filter( tab = ForumTab.objects.get( forum = Forum.objects.get(id = forum_id) , name = tab_name) )]
         } )
 
+# Get users in tab
 def GetTabUsers(request : HttpRequest, medium:str, tab_id):
     if (request.method == 'GET'):
         if medium == "forum":
@@ -516,6 +537,7 @@ def CheckAuthor(request:HttpRequest, author_name):
         except Author.DoesNotExist:
             return JsonResponse({'Author' : False})
 
+# Grab books written by author
 def AuthorBooks(request:HttpRequest, author_name:str):
     if request.method == "GET":
         if author_name != "Unknown":
@@ -544,85 +566,59 @@ def CreateForum(request : HttpRequest):
 
 def GetRecommended(request: HttpRequest, start : int):
     if request.method == "GET":
-
+        # Gets user
         myuser = MyUser.objects.get(id = request.session.__getitem__("_auth_user_id"))
-                                    
+
+        # Check if user allows recommendation
         if not myuser.recommended:
             return JsonResponse({'Found' : False})
  
-
         UserBooks = BookReviews.objects.filter(user = myuser)
 
+        # Returns if user hasnt reviewed a book
         if not (UserBooks):
             return JsonResponse({"Found" : False})
 
+        # Mean rating
         MeanRating = sum([i.rating for i in UserBooks])/len(UserBooks) 
-        print("I think this works : " , MeanRating)
-        print(f'pop goes the weasal {UserBooks}')
-        #sd = statistics.stdev([i.rating for i in UserBooks])
 
+        # Taking >Mean rating
         AllBooks = []
         for i in UserBooks:
-            if (i.rating >= MeanRating):
-                AllBooks.append(i.book.name)
+            if (i.rating >= MeanRating and i.rating >= 3):
+                AllBooks.append(i)
 
-        print(AllBooks)
-
-        ISBN = [str(i.GetBook().GetISBN()) for i in UserBooks]
-        print ("\n", ISBN , "\n")
+        # Store ISBN of books
+        ISBN = [str(i.GetBook().GetISBN()) for i in AllBooks]
+        ALLISBN = [str(i.GetBook().GetISBN()) for i in UserBooks]
 
 
         ## Check if the input is lower
         ## Make reocmmended books global
+           
+        for i in ISBN:
+            # Finding and checking if ISBN exist
+            book = file[file['isbn'] == i]
+            if len(book):
+                BookIndex = book.index[0]
+                # Grapping all similarities from least to highest
+                distance = similarity[BookIndex]
+                if (len(distance)):
+                    # Reversing from highest to least
+                    book_list = sorted(enumerate(distance), reverse=True, key=lambda x : x[1])[:10]
+                # Remvoing duplicates/books already existing
+                for code in book_list:
+                    if (file.iloc[code[0]].isbn not in ALLISBN):
+                        if (file.iloc[code[0]].isbn not in RecommendedBooks):
+                            if (type(file.iloc[code[0]].isbn) == str):
+                                RecommendedBooks.append(file.iloc[code[0]].isbn)
 
-        begin = 0
-        upper = ceil(10/len(ISBN))
+        shuffle(RecommendedBooks)
+        #Return books
+        return JsonResponse({"Found" : RecommendedBooks})
 
-        while len(RecommendedBooks) < start+10:
-            
-            begin += int(upper*(start/10))
-            print(len(RecommendedBooks), begin, upper)
-            for i in ISBN:
-                movie = file[file['isbn'] == i]
-                if len(movie):
-                    MovieIndex = movie.index[0]
-                    distance = similarity[MovieIndex]
-                    if (begin < len(distance)):
-                        movie_list = sorted(enumerate(distance), reverse=True, key=lambda x : x[1])[begin:begin+upper]
-                    for code in movie_list:
-                        if (file.iloc[code[0]].isbn not in ISBN):
-                            if (file.iloc[code[0]].isbn not in RecommendedBooks):
-                                if (type(file.iloc[code[0]].isbn) == str):
-                                    RecommendedBooks.append(file.iloc[code[0]].isbn)
-            begin += upper
-
-
-        # for i in ISBN:
-        #     movie = file[file['isbn'] == i]
-        #     if len(movie):
-        #         print (movie.index)
-        #         movie_index = movie.index[0]
-        #         distance = similarity[movie_index]
-        #         movie_list = sorted(enumerate(distance), reverse=True, key=lambda x : x[1])[:start+10]
-        #         for code in movie_list:
-        #             if (file.iloc[code[0]].isbn not in ISBN):
-        #                 if (file.iloc[code[0]].isbn not in RecommendedBooks):
-        #                     RecommendedBooks.append(file.iloc[code[0]].isbn)
-
-        print (RecommendedBooks)
-
-        # RecommendedBooks = RecommendedBooks[start:start+9]
-        # for i in RecommendedBooks:
-        #     if type(i) != str:
-        #         RecommendedBooks.remove(i)
-
-        # RecommendedBooks.append(file.iloc[ randint(0,len(file)) ].isbn)
-        # shuffle(RecommendedBooks)
-
-        return JsonResponse({"Found" : RecommendedBooks[start : start+10]})
-
+# Checks if book is in collection
 def CheckCollection(request:HttpRequest, user_id:str, book_id:str):
-    print("bob markley died")
     if request.method == "GET":
         try:
             booked = Book.objects.get(id=book_id)
@@ -634,12 +630,13 @@ def CheckCollection(request:HttpRequest, user_id:str, book_id:str):
                 book = booked
             )
         except BookTracker.DoesNotExist:
-            tracker = False
+            return JsonResponse({'Tracker' : False})
+
 
 
         return JsonResponse({'Tracker' : tracker.to_dict()})
 
-
+# Adds book to collection
 @csrf_exempt
 def AddToColection(request:HttpRequest):
     if request.method == "POST":
@@ -668,7 +665,8 @@ def AddToColection(request:HttpRequest):
         print(bt.to_dict())
 
         return JsonResponse({'Tracker' : bt.to_dict()})
-
+    
+# Updates pages or completed status
 @csrf_exempt
 def UpdateCollection(request:HttpRequest):
     if request.method == "PUT":
@@ -687,11 +685,11 @@ def UpdateCollection(request:HttpRequest):
 
 
 def addtodatabase(request):
-    
+    for row in file.itertuples():
+        print(row[1])
+
     for i in file:
-        for j in file[i]:
-            print (j, end=" ")
-        print()
+        print (i)
 
     return JsonResponse({})
 

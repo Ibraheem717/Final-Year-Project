@@ -45,7 +45,7 @@ export default defineComponent( {
         console.log(this.total_items);      
        },
        async bruh(request) {
-        let response = await fetch(("http://localhost:8000/add"), {method: "GET" })
+        let response = await fetch(("http://localhost:8000/test"), {method: "GET" })
        },
     },
 } )
@@ -54,7 +54,7 @@ export default defineComponent( {
 
 <template>
 
-    <button @click="bruh">okosdkfosdjfsd</button>
+    <!-- <button @click="bruh"> You Knw </button> -->
 
     <div class="p-5 text-left bg-light" style="height:100%">
 
@@ -84,76 +84,93 @@ export default defineComponent( {
 
         </div>
 
-        <table class="table table-hover">
+        <table class="table table-hover mx-3">
 
-            <tr class="row mt-1">
-
-                <th class="align-middle col-sm-2 p-2">Book Name</th>
-                <th class="align-middle col-sm-2 p-2">Book Image</th>
-                <th class="align-middle col-sm-2 p-2">Authors</th>
-                <th class="align-middle col-sm-2 p-2">Catagories</th>
-                <th class="align-middle col-sm-2 p-2">Pages</th>
-                <th class="align-middle col-sm-2 p-2">Publish Information</th>
-                
-            </tr>
+            <div class="d-flex justify-content-center"><button class="btn btn-secondary" @click="get_auction_items">Refresh</button></div>
             
-            <tr class="mt-2 row" v-for="items in total_items">
-
-                <!-- {{ items }} -->
-
-                <td class="col-sm-2 p-2"><router-link @click="store_item(items['isbn'])" class="nav-link p-0" :to="{path: '/Book'}"> {{items['title']}} </router-link>  </td>
-
-                <td class="col-sm-2 p-2"> 
-                    <img :src="items['img']" class="img-fluid p-0">
-                </td>
-
-                <td class="align-middle col-sm-2 p-2" > 
-                    <div v-if="items ['author']" class="p-0">
-                            {{ items['author'] }}
-                    </div>
-                    <div class="p-0" v-else>
-                        No Known Authors
-                    </div>
-                </td>
-
-                <td class="align-middle col-sm-2 p-2">
-                    <div v-if="items['genre']" class="p-0 " style="word-wrap: break-word;">
-                        {{items['genre']}}
-                    </div>
-                    <div class="p-0" v-else> Book has not be catagorised </div>
-                </td>
-
-                <td class="align-middle col-sm-2 p-2">
-                    <div v-if="items['pages']" class="p-0">
-                        <div  class="p-0">
-                            {{  items['pages'] }} Pages
+            <hr class="">
+            
+            <div class="row d-flex justify-content-around">
+                
+                <tr class="col-md-4 mt-2 row border border-dark " v-for="items in total_items">
+                    
+                    <tr class="row ">
+        
+                        <th class="align-middle col-sm-2 ">Book Name</th>
+                        <th class="align-middle col-sm-2 ">Book Image</th>
+                        <th class="align-middle col-sm-1 ">Authors</th>
+                        <th class="align-middle col-sm-4 ">Catagories</th>
+                        <th class="align-middle col-sm-1 ">Pages</th>
+                        <th class="align-middle col-sm-2 ">Publish Information</th>
+                        
+                    </tr>
+                   
+                    <!-- Title -->
+                    <td class="col-sm-2 p-2"><router-link @click="store_item(items['isbn'])" class="nav-link p-0" :to="{path: '/Book'}"> {{items['title']}} </router-link>  </td>
+                    
+                    <!-- Image -->
+                    <td class="col-sm-2 p-2"> 
+                        <img :src="items['img']" class="img-fluid p-0">
+                    </td>
+                    
+                    <!-- Author -->
+                    <td class="align-middle col-sm-1 p-2" > 
+                        <div v-if="items ['author']" class="p-0">
+                                {{ items['author'] }}
                         </div>
-                    </div>
-                    <div class="p-0" v-else> No page count </div>
-                </td>
-
-                <td class="align-middle col-sm-2 p-2">
-                    <div v-if="items['rating']" class="p-0">
-                        <div  class="p-0">
-                            Rating : {{  items['rating'] }}
+                        <div class="p-0" v-else>
+                            No Known Authors
                         </div>
-                    </div>
-                    <div class="p-0" v-else> No Known Publisher </div>
-
-                    <div v-if="items['totalratings']" class="p-0">
-                        <div  class="p-0">
-                            Number of Rating : {{  items['totalratings'] }}
+                    </td>
+                    
+                    <!-- Genre -->
+                    <td class="align-middle col-sm-4 p-2">
+                        <div v-if="items['genre']" class="p-0 " style="word-wrap: break-word;">
+                            {{items['genre']}}
                         </div>
-                    </div>
-
-                    <div v-if="items['reviews']" class="p-0">
-                        <div  class="p-0">
-                            Number of Reviews : {{  items['reviews'] }}
+                        <div class="p-0" v-else> Book has not be catagorised </div>
+                    </td>
+                    
+                    <!-- Pages -->
+                    <td class="align-middle col-sm-1 p-2">
+                        <div v-if="items['pages']" class="p-0">
+                            <div  class="p-0">
+                                {{  items['pages'] }} Pages
+                            </div>
                         </div>
-                    </div>
-                    <div class="p-0" v-else> No Known Publish Data </div>
-                </td> 
-            </tr>
+                        <div class="p-0" v-else> No page count </div>
+                    </td>
+                    
+                    <!-- Rating -->
+                    <td class="align-middle col-sm-2 p-2">
+                        <div v-if="items['rating']" class="p-0">
+                            <div  class="p-0">
+                                Rating : {{  items['rating'] }}
+                            </div>
+                        </div>
+                        <div class="p-0" v-else> No Known Publisher </div>
+    
+                        <div v-if="items['totalratings']" class="p-0">
+                            <div  class="p-0">
+                                Number of Rating : {{  items['totalratings'] }}
+                            </div>
+                        </div>
+                        
+                        <!-- Review -->
+                        <div v-if="items['reviews']" class="p-0">
+                            <div  class="p-0">
+                                Number of Reviews : {{  items['reviews'] }}
+                            </div>
+                        </div>
+                        <div class="p-0" v-else> No Known Publish Data </div>
+
+                    </td> 
+    
+                </tr>
+                
+
+            </div>
+            
 
         </table>
 

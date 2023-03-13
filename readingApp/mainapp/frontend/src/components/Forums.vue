@@ -55,7 +55,7 @@ export default defineComponent( {
 <template>
 
 
-    <form class="row" style="padding-top: 3rem; padding-left: 3rem; padding-right: 3rem;" @submit.prevent="CreateForum">
+    <form class="row p-5" @submit.prevent="CreateForum">
 
         <div class="col-md-2"><input class="form-control" type="text" v-model="Name" placeholder="Create new forum"></div>
         

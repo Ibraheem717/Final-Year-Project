@@ -11,6 +11,8 @@ urlpatterns = [
     path('user-profile', views.profile_api , name="View Profile"),
     path('GetForeignUser/<int:user>', views.GetForeignUser, name="Get Foreign User"),
 
+    path('test', views.addtodatabase, name="Get Foreign User"),
+
     path('GetFriends/<int:user_id>', views.GetFriends, name="Get Foreign User"),
     path('AddFriends', views.AddFriends, name="Add Foreign User"),
     path('CheckFriends/<int:user_id>/<int:friend_id>', views.CheckFriends, name="Add Foreign User"),
