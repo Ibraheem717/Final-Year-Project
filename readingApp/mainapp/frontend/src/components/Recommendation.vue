@@ -9,6 +9,9 @@ export default defineComponent( {
         this.get_owner_id()
         this.GetRecomended()
     },
+    props: [
+        'hostname' ,
+    ],
     data() {
         return {
             item_owner : "",
@@ -21,7 +24,7 @@ export default defineComponent( {
     },
     methods : {
         async get_owner_id() {
-            let response = await fetch("./ses-user", {method: "GET", credentials: "include", mode: "cors", referrerPolicy: "no-referrer" })
+            let response = await fetch(this.hostname+"ses-user", {method: "GET", credentials: "include", mode: "cors", referrerPolicy: "no-referrer" })
             let data = await response.json()
             this.item_owner = data.user_id
         },
@@ -31,7 +34,7 @@ export default defineComponent( {
         async GetRecomended() {
             this.recomended = []
             this.End = false
-            let data = await fetch(("./GetRecommendation/" + this.RecomendedStart*10), {method: "GET", credentials: "include", mode: "cors", referrerPolicy: "no-referrer" })
+            let data = await fetch((this.hostname+"GetRecommendation/" + this.RecomendedStart*10), {method: "GET", credentials: "include", mode: "cors", referrerPolicy: "no-referrer" })
             let response = await data.json()
             response = response['Found']
             if (response) {
@@ -44,7 +47,7 @@ export default defineComponent( {
             console.log(this.RecomendedStart);
         },
         async GetBook(isbn) {
-            let response = await fetch(("./Search/" + isbn) , {
+            let response = await fetch((this.hostname+"Search/" + isbn) , {
                 method: "GET",  
             })
             let retrieved_data = await response.json()

@@ -12,6 +12,9 @@ export default defineComponent( {
         this.fetch_Messages()
         this.fetch_tabs()
     },
+    props: [
+        'hostname' ,
+    ],
     data() {
         return {
             Forum : "",
@@ -32,7 +35,7 @@ export default defineComponent( {
     },   
     methods : {
         async get_owner_id() {
-            let response = await fetch(("./ses-user"), {method: "GET", credentials: "include", mode: "cors", referrerPolicy: "no-referrer" })
+            let response = await fetch((this.hostname+"ses-user"), {method: "GET", credentials: "include", mode: "cors", referrerPolicy: "no-referrer" })
             let data = await response.json()
             this.item_owner = data.user_id
         },
@@ -46,7 +49,7 @@ export default defineComponent( {
             localStorage.setItem('user', item)
         },
         async fetch_tabs() {
-            let data = await fetch(("./GetAllTabs/Forum/" + this.Forum) , {
+            let data = await fetch((this.hostname+"GetAllTabs/Forum/" + this.Forum) , {
                 method: 'GET',
                 credentials: "include",
                 mode: "cors",
@@ -63,7 +66,7 @@ export default defineComponent( {
             this.fetch_user()
         },
         async fetch_user() {
-            let data = await fetch(("./GetTabUsers/forum/" + this.tab_id) , {
+            let data = await fetch((this.hostname+"GetTabUsers/forum/" + this.tab_id) , {
                 method: 'GET',
             })
             let response = await data.json()
@@ -74,7 +77,7 @@ export default defineComponent( {
             this.tab_users = response
         },
         async fetch_Messages() {
-            let data = await fetch(("./GetTab/" + this.Forum + "/" + this.current_tab) , {
+            let data = await fetch((this.hostname+"GetTab/" + this.Forum + "/" + this.current_tab) , {
                 method: 'GET',
                 credentials: "include",
                 mode: "cors",
@@ -99,7 +102,7 @@ export default defineComponent( {
         },
         async post_message() {
 
-            let data = await fetch(("./postMessage/Forum"), {
+            let data = await fetch((this.hostname+"postMessage/Forum"), {
             method: 'POST',
             credentials: "include",
             mode: "cors",
@@ -125,7 +128,7 @@ export default defineComponent( {
         async create_tab() {
             if (this.current_tab!="") 
             {
-                let data = await fetch(("./CreateTab"), {
+                let data = await fetch((this.hostname+"CreateTab"), {
                 method: 'POST',
                 credentials: "include",
                 mode: "cors",

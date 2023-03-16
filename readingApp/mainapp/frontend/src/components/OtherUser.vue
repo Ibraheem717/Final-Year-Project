@@ -10,6 +10,9 @@ export default defineComponent( {
         this.CheckFriends()
         this.GetFriend()
     },
+    props: [
+        'hostname' ,
+    ],
     data() {
         return {
             my_user_id : 0,
@@ -34,7 +37,7 @@ export default defineComponent( {
     },
     methods : {
         async GetMyUser() {
-            let response = await fetch("./ses-user", {method: "GET", credentials: "include", mode: "cors", referrerPolicy: "no-referrer" })
+            let response = await fetch(this.hostname+"ses-user", {method: "GET", credentials: "include", mode: "cors", referrerPolicy: "no-referrer" })
             let data = await response.json()
             console.log(data);
             this.my_user_id = data.user_id
@@ -42,7 +45,7 @@ export default defineComponent( {
         },
         async GetFriend() {
             console.log("called");
-            let response = await fetch(("./GetFriends/" + this.user_id), {method: "GET", credentials: "include", mode: "cors", referrerPolicy: "no-referrer"  })
+            let response = await fetch((this.hostname+"GetFriends/" + this.user_id), {method: "GET", credentials: "include", mode: "cors", referrerPolicy: "no-referrer"  })
             let data = await response.json()
             this.friends = data['friend']
 
@@ -51,7 +54,7 @@ export default defineComponent( {
             
         },
         async CheckFriends() {
-            let data = await fetch(("./CheckFriends/" + this.my_user_id +"/"+ this.user_id), {method: "GET", credentials: "include", mode: "cors", referrerPolicy: "no-referrer"  ,
+            let data = await fetch((this.hostname+"CheckFriends/" + this.my_user_id +"/"+ this.user_id), {method: "GET", credentials: "include", mode: "cors", referrerPolicy: "no-referrer"  ,
             })
             let response = await data.json()
 
@@ -62,7 +65,7 @@ export default defineComponent( {
             
         },
         async AddFriend() {
-            let response = await fetch(("./AddFriends"), {method: "POST", credentials: "include", mode: "cors", referrerPolicy: "no-referrer"  ,
+            let response = await fetch((this.hostname+"AddFriends"), {method: "POST", credentials: "include", mode: "cors", referrerPolicy: "no-referrer"  ,
             headers: {
             'Accept': 'application/json',
             'Content-Type': 'application/json',
@@ -86,7 +89,7 @@ export default defineComponent( {
             
         },
         async fetch_userbooks() {
-            let data = await fetch( ("./SearchUser/" + this.user_id))
+            let data = await fetch( (this.hostname+"SearchUser/" + this.user_id))
             let response = await data.json()
             
             this.KaggleBooks = response['KaggleBooks']
@@ -102,7 +105,7 @@ export default defineComponent( {
             console.log(this.BookStats);
         },
         async fetch_foreign_user() {            
-            let data = await fetch(("./GetForeignUser/" + this.user_id), {method: "GET", credentials: "include", mode: "cors", referrerPolicy: "no-referrer"  })
+            let data = await fetch((this.hostname+"GetForeignUser/" + this.user_id), {method: "GET", credentials: "include", mode: "cors", referrerPolicy: "no-referrer"  })
             let response = await data.json()
             console.log(response);
             this.private = response['private']

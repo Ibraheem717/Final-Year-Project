@@ -7,6 +7,9 @@ export default defineComponent( {
         this.get_username()
         this.fetch_profile()
     },
+    props: [
+        'hostname' ,
+    ],
     data() {
         return {
             user : {},
@@ -30,7 +33,7 @@ export default defineComponent( {
     },
     methods : {
         async get_username() {
-            let response = await fetch("./ses-user", {method: "GET", credentials: "include", mode: "cors", referrerPolicy: "no-referrer" })
+            let response = await fetch(this.hostname+"ses-user", {method: "GET", credentials: "include", mode: "cors", referrerPolicy: "no-referrer" })
             let data = await response.json()
             this.user_id = data.user_id
 
@@ -44,7 +47,7 @@ export default defineComponent( {
             localStorage.setItem('user', item)
         },
         async fetch_userbooks() {
-            let data = await fetch( ("./SearchUser/" + this.user_id))
+            let data = await fetch( (this.hostname+"SearchUser/" + this.user_id))
             let response = await data.json()
             
             this.KaggleBooks = response['KaggleBooks']
@@ -62,7 +65,7 @@ export default defineComponent( {
             
         },
         async fetch_filter_userbooks(filter) {
-            let data = await fetch( ("./SearchUser/" + this.user_id + "/" + filter))
+            let data = await fetch( (this.hostname+"SearchUser/" + this.user_id + "/" + filter))
             let response = await data.json()
             
             this.KaggleBooks = response['KaggleBooks']
@@ -81,7 +84,7 @@ export default defineComponent( {
         },
         async fetch_profile() {
             
-            let response = await fetch("./user-profile", {method: "GET", credentials: "include", mode: "cors", referrerPolicy: "no-referrer"  })
+            let response = await fetch(this.hostname+"user-profile", {method: "GET", credentials: "include", mode: "cors", referrerPolicy: "no-referrer"  })
             let data = await response.json()
             this.user = data.myUser[0]
             this.recommendation = this.user['recommend']
@@ -92,7 +95,7 @@ export default defineComponent( {
         },
         async GetFriend() {
             console.log("called");
-            let response = await fetch(("./GetFriends/" + this.user_id), {method: "GET", credentials: "include", mode: "cors", referrerPolicy: "no-referrer"  })
+            let response = await fetch((this.hostname+"GetFriends/" + this.user_id), {method: "GET", credentials: "include", mode: "cors", referrerPolicy: "no-referrer"  })
             let data = await response.json()
             this.friends = data['friend']
 
@@ -108,7 +111,7 @@ export default defineComponent( {
                 }
             }
             if (delet == false){
-                let response = await fetch("./user-profile", {
+                let response = await fetch(this.hostname+"user-profile", {
                     method: 'PUT',
                     headers: {
                     'Accept': 'application/json',

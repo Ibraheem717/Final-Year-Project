@@ -14,21 +14,19 @@ import ForumPage from './components/ForumPage.vue'
 import Author from './components/Author.vue'
 
 
-let hostname = "./"
-
-const csrfToken = getCookie('CSRF-TOKEN');
+let hostname = "http://localhost:8000/"
 
 const router = createRouter({
     history: createWebHistory(),
     routes: [
-        {path: '/Profile', name: 'Profile', component: Profile},
-        {path: '/OtherUser', name: 'User Page', component: OtherUser},
-        {path: '/Recommendation', name: 'Recommendation', component: Recommendation, props: {cookie:csrfToken}},
-        {path: '/Book', alias:'', name: 'Item', component: Book},
-        {path: '/Search', name: 'Search', component: Search},
-        {path: '/Forums', name: 'Forums', component: Forums},
-        {path: '/ForumPage', name: 'Forum Page', component: ForumPage},
-        {path: '/Author', name: 'Author Page', component: Author},
+        {path: '/Profile', alias:'', name: 'Profile', component: Profile, props : {hostname: hostname}},
+        {path: '/OtherUser', name: 'User Page', component: OtherUser, props : {hostname: hostname}},
+        {path: '/Recommendation', name: 'Recommendation', component: Recommendation, props : {hostname: hostname}},
+        {path: '/Book', name: 'Item', component: Book, props : {hostname: hostname}},
+        {path: '/Search', name: 'Search', component: Search, props : {hostname: hostname}},
+        {path: '/Forums', name: 'Forums', component: Forums, props : {hostname: hostname}},
+        {path: '/ForumPage', name: 'Forum Page', component: ForumPage, props : {hostname: hostname}},
+        {path: '/Author', name: 'Author Page', component: Author, props : {hostname: hostname}},
         
     ]
 })

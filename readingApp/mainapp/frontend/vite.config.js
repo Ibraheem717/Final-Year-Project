@@ -16,7 +16,7 @@ export default defineConfig(({ command, mode }) => {
                 emptyOutDir: true,
                 outDir: '../static/',
             },
-            base: (mode == 'development') ? 'http://localhost:5173/' : '../static/',
+            base: (mode == 'development') ? 'http://localhost:5173/' : '/static/',
         }
     }
 )

@@ -9,7 +9,7 @@ from django.contrib import messages
 from django.contrib.auth import logout
 from PIL import Image
 import numpy as np
-import json, datetime, statistics, jwt
+import json, datetime, statistics
 from re import IGNORECASE
 from random import randint, shuffle
 from math import ceil
@@ -18,7 +18,7 @@ from sklearn.metrics.pairwise import cosine_similarity
 from sklearn.feature_extraction.text import CountVectorizer
 from django.middleware import csrf
 
-file = pd.read_csv('mainapp\KaggleGoodReadsTest.csv')
+file = pd.read_csv('mainapp/KaggleGoodReadsTest.csv')
 #Vectorize English words into tokens for comparison
 cv = CountVectorizer(stop_words='english')
 #Converts all the genres into tokens 
@@ -35,6 +35,8 @@ def index(request: HttpRequest):
         user = authenticate(username=form['username'].data, password=form['password'].data)
         if user:
             login(request, user)
+
+            # return HttpResponseRedirect("http://localhost:5173/")
 
             return render(request, "mainapp/user/index.html")
 

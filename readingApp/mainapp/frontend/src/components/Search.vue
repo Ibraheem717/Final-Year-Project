@@ -6,6 +6,12 @@ export default defineComponent( {
         this.get_owner_id()
         this.get_auction_items()
     },
+    props: [
+        'hostname' ,
+    ],
+    props: [
+        'hostname' ,
+    ],
     data() {
         return {
             user_id : 0,
@@ -19,7 +25,7 @@ export default defineComponent( {
     },
     methods : {
         async get_auction_items() {
-            let response = await fetch("./Search", {method: "GET" })
+            let response = await fetch(this.hostname + "Search", {method: "GET" })
             let data = await response.json()
             let tempArr = []
             for (let i = 0; i < data['file'].length; i++)
@@ -28,7 +34,7 @@ export default defineComponent( {
             console.log(this.total_items);          
         },
         async get_owner_id() {
-            let response = await fetch("./ses-user", {method: "GET", credentials: "include", mode: "cors", referrerPolicy: "no-referrer" })
+            let response = await fetch(this.hostname+"ses-user", {method: "GET", credentials: "include", mode: "cors", referrerPolicy: "no-referrer" })
             let data = await response.json()
             this.user_id = data.user_id
         },
@@ -36,7 +42,7 @@ export default defineComponent( {
             localStorage.setItem('item', item)
        },
        async Search(request) {
-        let response = await fetch(("./SearchGeneral/" + request), {method: "GET" })
+        let response = await fetch((this.hostname+"SearchGeneral/" + request), {method: "GET" })
         let data = await response.json()
         let tempArr = []
         for (let i = 0; i < data['file'].length; i++)
@@ -45,7 +51,7 @@ export default defineComponent( {
         console.log(this.total_items);      
        },
        async bruh(request) {
-        let response = await fetch(("./test"), {method: "GET" })
+        let response = await fetch((this.hostname+"test"), {method: "GET" })
        },
     },
 } )
@@ -53,8 +59,6 @@ export default defineComponent( {
 </script>
 
 <template>
-
-    <!-- <button @click="bruh"> You Knw </button> -->
 
     <div class="p-5 text-left bg-light" style="height:100%">
 
@@ -66,7 +70,7 @@ export default defineComponent( {
 
                 <div class="row">
 
-                    <form class="col-sm-4 row" @submit.prevent="Search(search)">
+                    <form class="col-sm-3 row" @submit.prevent="Search(search)">
 
                         <div class="col-sm-9"><input class="form-control" type="text" v-model="search" placeholder="Search" ></div>
 
@@ -92,29 +96,29 @@ export default defineComponent( {
             
             <div class="row d-flex justify-content-around">
                 
-                <tr class="col-md-4 mt-2 row border border-dark " v-for="items in total_items">
+                <tr class="col-md-5 mt-2 row border border-dark " v-for="items in total_items">
                     
                     <tr class="row ">
         
-                        <th class="align-middle col-sm-2 ">Book Name</th>
-                        <th class="align-middle col-sm-2 ">Book Image</th>
-                        <th class="align-middle col-sm-1 ">Authors</th>
-                        <th class="align-middle col-sm-4 ">Catagories</th>
-                        <th class="align-middle col-sm-1 ">Pages</th>
-                        <th class="align-middle col-sm-2 ">Publish Information</th>
+                        <th class="align-middle col-sm-2 px-4">Book Name</th>
+                        <th class="align-middle col-sm-2 px-4">Book Image</th>
+                        <th class="align-middle col-sm-1 px-4">Authors</th>
+                        <th class="align-middle col-sm-4 px-4 text-center">Catagories</th>
+                        <th class="align-middle col-sm-1 px-4">Pages</th>
+                        <th class="align-middle col-sm-2 px-4">Publish Information</th>
                         
                     </tr>
                    
                     <!-- Title -->
-                    <td class="col-sm-2 p-2"><router-link @click="store_item(items['isbn'])" class="nav-link p-0" :to="{path: '/Book'}"> {{items['title']}} </router-link>  </td>
+                    <td class="col-sm-2 p-4"><router-link @click="store_item(items['isbn'])" class="nav-link p-0" :to="{path: '/Book'}"> {{items['title']}} </router-link>  </td>
                     
                     <!-- Image -->
-                    <td class="col-sm-2 p-2"> 
+                    <td class="col-sm-2 p-4"> 
                         <img :src="items['img']" class="img-fluid p-0">
                     </td>
                     
                     <!-- Author -->
-                    <td class="align-middle col-sm-1 p-2" > 
+                    <td class="align-middle col-sm-1 p-4" > 
                         <div v-if="items ['author']" class="p-0">
                                 {{ items['author'] }}
                         </div>
@@ -124,7 +128,7 @@ export default defineComponent( {
                     </td>
                     
                     <!-- Genre -->
-                    <td class="align-middle col-sm-4 p-2">
+                    <td class="align-middle col-sm-4 p-4 text-center">
                         <div v-if="items['genre']" class="p-0 " style="word-wrap: break-word;">
                             {{items['genre']}}
                         </div>
@@ -132,7 +136,7 @@ export default defineComponent( {
                     </td>
                     
                     <!-- Pages -->
-                    <td class="align-middle col-sm-1 p-2">
+                    <td class="align-middle col-sm-1 p-4">
                         <div v-if="items['pages']" class="p-0">
                             <div  class="p-0">
                                 {{  items['pages'] }} Pages
@@ -142,7 +146,7 @@ export default defineComponent( {
                     </td>
                     
                     <!-- Rating -->
-                    <td class="align-middle col-sm-2 p-2">
+                    <td class="align-middle col-sm-2 p-4">
                         <div v-if="items['rating']" class="p-0">
                             <div  class="p-0">
                                 Rating : {{  items['rating'] }}

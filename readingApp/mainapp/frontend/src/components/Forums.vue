@@ -7,6 +7,9 @@ export default defineComponent( {
         this.get_owner_id()
         this.GetForums()
     },
+    props: [
+        'hostname' ,
+    ],
     data() {
         return {
             all_items : [],
@@ -19,17 +22,17 @@ export default defineComponent( {
     },
     methods : {
         async get_owner_id() {
-            let response = await fetch("./ses-user", {method: "GET", credentials: "include", mode: "cors", referrerPolicy: "no-referrer" })
+            let response = await fetch(this.hostname+"ses-user", {method: "GET", credentials: "include", mode: "cors", referrerPolicy: "no-referrer" })
             let data = await response.json()
             this.user_id = data.user_id
         },
        async GetForums ( ) {
-        let data = await fetch("./GetForums", {method: "GET", credentials: "include", mode: "cors", referrerPolicy: "no-referrer" })
+        let data = await fetch(this.hostname+"GetForums", {method: "GET", credentials: "include", mode: "cors", referrerPolicy: "no-referrer" })
         let response = await data.json()
         this.AllForums = response['Forums']
        },
        async CreateForum() {
-        let data = await fetch("./CreateForum", 
+        let data = await fetch(this.hostname+"CreateForum", 
         {   method: 'POST',
             headers: {
             'Accept': 'application/json',
