@@ -81,7 +81,7 @@ def get_user(request: HttpRequest) -> JsonResponse:
             'user_id' : request.session.__getitem__("_auth_user_id")
         }, safe=False)
 
-@csrf_exempt
+
 def profile_api(request: HttpRequest) -> JsonResponse:
     if request.method == 'GET':
         # Gets current user logged
@@ -153,7 +153,7 @@ def GetFriends(request:HttpRequest, user_id):
             'friend' : [i.to_dict() for i in Friends.objects.filter(user = MyUser.objects.get(id = user_id))]
         })
 
-@csrf_exempt
+
 def AddFriends(request:HttpRequest):
     if request.method == "POST":
         data = json.loads(request.body.decode('utf-8'))
@@ -311,7 +311,7 @@ def GetReview(request : HttpRequest, BookISBN : str) :
         return JsonResponse({"Reviews" : 
             [i.to_dict() for i in BookReviews.objects.filter( book = found_book )]})
 
-@csrf_exempt
+
 def postReview(request: HttpRequest):
     if request.method == 'POST':
         data = json.loads( request.body.decode('utf-8') )
@@ -358,7 +358,7 @@ def postReview(request: HttpRequest):
 
         return JsonResponse( {"View" : AlreadyReview} )
 
-@csrf_exempt
+
 def postMessage(request: HttpRequest, medium: str) -> JsonResponse:
     if request.method == 'POST':
         data = json.loads( request.body.decode('utf-8') )
@@ -498,7 +498,7 @@ def GetTabUsers(request : HttpRequest, medium:str, tab_id):
             'tab' : [MyUser.objects.get(id = i).to_dict() for i in users]
         })
 
-@csrf_exempt
+
 def CreateTab(request : HttpRequest):
     if request.method == "POST":
         data  = json.loads( request.body.decode('utf-8') )
@@ -549,7 +549,7 @@ def AuthorBooks(request:HttpRequest, author_name:str):
         return JsonResponse({'Books' : False})
 
 
-@csrf_exempt
+
 def CreateForum(request : HttpRequest):
     if request.method == "POST":
         data  = json.loads( request.body.decode('utf-8') )
@@ -639,7 +639,6 @@ def CheckCollection(request:HttpRequest, user_id:str, book_id:str):
         return JsonResponse({'Tracker' : tracker.to_dict()})
 
 # Adds book to collection
-@csrf_exempt
 def AddToColection(request:HttpRequest):
     if request.method == "POST":
         data = json.loads( request.body.decode('utf-8'))
@@ -669,7 +668,7 @@ def AddToColection(request:HttpRequest):
         return JsonResponse({'Tracker' : bt.to_dict()})
     
 # Updates pages or completed status
-@csrf_exempt
+
 def UpdateCollection(request:HttpRequest):
     if request.method == "PUT":
         data = json.loads(  request.body.decode('utf-8') )

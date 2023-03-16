@@ -14,7 +14,7 @@ import ForumPage from './components/ForumPage.vue'
 import Author from './components/Author.vue'
 
 
-let hostname = "http://localhost:8000/"
+let hostname = "./"
 
 const router = createRouter({
     history: createWebHistory(),
