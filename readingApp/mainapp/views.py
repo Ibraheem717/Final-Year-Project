@@ -8,7 +8,7 @@ from django.contrib import messages
 from django.contrib.auth import logout
 from PIL import Image
 import numpy as np
-import json, datetime, statistics, jwt
+import json, datetime, statistics, os
 from re import IGNORECASE
 from random import randint, shuffle
 from math import ceil
@@ -17,7 +17,8 @@ from sklearn.metrics.pairwise import cosine_similarity
 from sklearn.feature_extraction.text import CountVectorizer
 from django.middleware import csrf
 
-file = pd.read_csv('mainapp\KaggleGoodReadsTest.csv')
+
+file = pd.read_csv(r'/Users/nahidasamih/Documents/GitHub/Final-Year-Project/readingApp/mainapp/KaggleGoodReadsTest.csv') 
 cv = CountVectorizer(stop_words='english')
 vectors = cv.fit_transform(file['genre'].apply(lambda x: np.str_(x))).toarray()
 similarity = cosine_similarity(vectors)
@@ -45,7 +46,7 @@ def index(request: HttpRequest):
             #     'jwt' : token
             # }
 
-            return HttpResponseRedirect("http://localhost:5173/Search")
+            return render(request, "mainapp/user/index.html")
 
         else:
             messages.error(request,'username or password not correct')
