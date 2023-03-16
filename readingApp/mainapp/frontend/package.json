@@ -2,9 +2,10 @@
   "name": "frontend",
   "version": "0.0.0",
   "private": true,
+  "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build; mv ../static/mainapp/vue/index.html ../templates/mainapp/user/.",
+    "build": "vite build",
     "preview": "vite preview"
   },
   "dependencies": {

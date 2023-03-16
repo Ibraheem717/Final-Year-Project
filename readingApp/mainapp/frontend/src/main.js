@@ -14,22 +14,7 @@ import ForumPage from './components/ForumPage.vue'
 import Author from './components/Author.vue'
 
 
-let hostname = "http://localhost:8000/"
-
-function getCookie(name) {
-    if (!document.cookie) {
-      return null;
-    }
-  
-    const xsrfCookies = document.cookie.split(';')
-      .map(c => c.trim())
-      .filter(c => c.startsWith(name + '='));
-  
-    if (xsrfCookies.length === 0) {
-      return null;
-    }
-    return decodeURIComponent(xsrfCookies[0].split('=')[1]);
-  }
+let hostname = "./"
 
 const csrfToken = getCookie('CSRF-TOKEN');
 
@@ -39,7 +24,7 @@ const router = createRouter({
         {path: '/Profile', name: 'Profile', component: Profile},
         {path: '/OtherUser', name: 'User Page', component: OtherUser},
         {path: '/Recommendation', name: 'Recommendation', component: Recommendation, props: {cookie:csrfToken}},
-        {path: '/Book', name: 'Item', component: Book},
+        {path: '/Book', alias:'', name: 'Item', component: Book},
         {path: '/Search', name: 'Search', component: Search},
         {path: '/Forums', name: 'Forums', component: Forums},
         {path: '/ForumPage', name: 'Forum Page', component: ForumPage},

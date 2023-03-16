@@ -1,10 +1,10 @@
-from django.urls import path
+from django.urls import path, re_path
 
 from . import views
 
 urlpatterns = [
 
-    path('add', views.addtodatabase),
+    #path('add', views.addtodatabase),
     path('', views.index, name="Login"),
     path('sign-up', views.signup, name='SignUp'),
     path('ses-user', views.get_user, name="Get UserID"),
@@ -43,6 +43,8 @@ urlpatterns = [
     path('CheckCollection/<str:user_id>/<str:book_id>', views.CheckCollection, name="Check collection"),
     path('AddToColection', views.AddToColection, name="Add to collection"),
     path('UpdateCollection', views.UpdateCollection, name="Update collection"),
+
+    re_path(r'^.*', views.index, name='Vue User'),
 
 
     path('logout', views.logout_view, name="Logout"),

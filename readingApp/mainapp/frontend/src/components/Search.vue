@@ -19,7 +19,7 @@ export default defineComponent( {
     },
     methods : {
         async get_auction_items() {
-            let response = await fetch("http://localhost:8000/Search", {method: "GET" })
+            let response = await fetch("./Search", {method: "GET" })
             let data = await response.json()
             let tempArr = []
             for (let i = 0; i < data['file'].length; i++)
@@ -28,7 +28,7 @@ export default defineComponent( {
             console.log(this.total_items);          
         },
         async get_owner_id() {
-            let response = await fetch("http://localhost:8000/ses-user", {method: "GET", credentials: "include", mode: "cors", referrerPolicy: "no-referrer" })
+            let response = await fetch("./ses-user", {method: "GET", credentials: "include", mode: "cors", referrerPolicy: "no-referrer" })
             let data = await response.json()
             this.user_id = data.user_id
         },
@@ -36,7 +36,7 @@ export default defineComponent( {
             localStorage.setItem('item', item)
        },
        async Search(request) {
-        let response = await fetch(("http://localhost:8000/SearchGeneral/" + request), {method: "GET" })
+        let response = await fetch(("./SearchGeneral/" + request), {method: "GET" })
         let data = await response.json()
         let tempArr = []
         for (let i = 0; i < data['file'].length; i++)
@@ -45,7 +45,7 @@ export default defineComponent( {
         console.log(this.total_items);      
        },
        async bruh(request) {
-        let response = await fetch(("http://localhost:8000/test"), {method: "GET" })
+        let response = await fetch(("./test"), {method: "GET" })
        },
     },
 } )

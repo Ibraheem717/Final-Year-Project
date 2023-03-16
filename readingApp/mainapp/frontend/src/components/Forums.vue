@@ -19,17 +19,17 @@ export default defineComponent( {
     },
     methods : {
         async get_owner_id() {
-            let response = await fetch("http://localhost:8000/ses-user", {method: "GET", credentials: "include", mode: "cors", referrerPolicy: "no-referrer" })
+            let response = await fetch("./ses-user", {method: "GET", credentials: "include", mode: "cors", referrerPolicy: "no-referrer" })
             let data = await response.json()
             this.user_id = data.user_id
         },
        async GetForums ( ) {
-        let data = await fetch("http://localhost:8000/GetForums", {method: "GET", credentials: "include", mode: "cors", referrerPolicy: "no-referrer" })
+        let data = await fetch("./GetForums", {method: "GET", credentials: "include", mode: "cors", referrerPolicy: "no-referrer" })
         let response = await data.json()
         this.AllForums = response['Forums']
        },
        async CreateForum() {
-        let data = await fetch("http://localhost:8000/CreateForum", 
+        let data = await fetch("./CreateForum", 
         {   method: 'POST',
             headers: {
             'Accept': 'application/json',

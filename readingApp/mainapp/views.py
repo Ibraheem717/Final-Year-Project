@@ -36,7 +36,7 @@ def index(request: HttpRequest):
         if user:
             login(request, user)
 
-            return HttpResponseRedirect("http://localhost:5173/Search")
+            return render(request, "mainapp/user/index.html")
 
         else:
             messages.error(request,'username or password not correct')

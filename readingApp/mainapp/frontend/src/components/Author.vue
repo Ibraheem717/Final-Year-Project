@@ -37,7 +37,7 @@ export default defineComponent( {
     },   
     methods : {
         async get_owner_id() {
-            let response = await fetch(("http://localhost:8000/ses-user"), {method: "GET", credentials: "include", mode: "cors", referrerPolicy: "no-referrer" })
+            let response = await fetch(("./ses-user"), {method: "GET", credentials: "include", mode: "cors", referrerPolicy: "no-referrer" })
             let data = await response.json()
             this.item_owner = data.user_id
             
@@ -53,7 +53,7 @@ export default defineComponent( {
         },
         async fetch_author() {
             console.log("hello");
-            let data = await fetch(("http://localhost:8000/CheckAuthor/" +this.item ) , {
+            let data = await fetch(("./CheckAuthor/" +this.item ) , {
                 method: 'GET',
                 credentials: "include",
                 mode: "cors",
@@ -69,7 +69,7 @@ export default defineComponent( {
         },
         async fetch_books() {
             console.log("hello");
-            let data = await fetch(("http://localhost:8000/AuthorBooks/" +this.item ) , {
+            let data = await fetch(("./AuthorBooks/" +this.item ) , {
                 method: 'GET',
                 credentials: "include",
                 mode: "cors",
@@ -97,7 +97,7 @@ export default defineComponent( {
 
         },
         async fetch_Messages() {
-            let data = await fetch(("http://localhost:8000/GetMessage/Author/" + this.item + "/" + this.tab ) , {
+            let data = await fetch(("./GetMessage/Author/" + this.item + "/" + this.tab ) , {
                 method: 'GET',
                 credentials: "include",
                 mode: "cors",
@@ -119,7 +119,7 @@ export default defineComponent( {
             this.fetch_tabs()
         },
         async fetch_tabs() {
-            let data = await fetch(("http://localhost:8000/GetAllTabs/Author/" + this.author_id['id']) , {
+            let data = await fetch(("./GetAllTabs/Author/" + this.author_id['id']) , {
                 method: 'GET',
                 credentials: "include",
                 mode: "cors",
@@ -138,7 +138,7 @@ export default defineComponent( {
             this.fetch_user()
         },
         async fetch_user() {
-            let data = await fetch(("http://localhost:8000/GetTabUsers/author/" + this.tab_id) , {
+            let data = await fetch(("./GetTabUsers/author/" + this.tab_id) , {
                 method: 'GET',
             })
             let response = await data.json()
@@ -151,7 +151,7 @@ export default defineComponent( {
         async create_tab() {
             if (this.tab!="") 
             {
-                let data = await fetch(("http://localhost:8000/CreateTab"), {
+                let data = await fetch(("./CreateTab"), {
                 method: 'POST',
                 credentials: "include",
                 mode: "cors",
@@ -174,7 +174,7 @@ export default defineComponent( {
         async post_message() {
             if (this.msg!="") 
             {
-                let data = await fetch(("http://localhost:8000/postMessage/Author"), {
+                let data = await fetch(("./postMessage/Author"), {
                 method: 'POST',
                 credentials: "include",
                 mode: "cors",
